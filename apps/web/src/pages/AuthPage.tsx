@@ -37,7 +37,7 @@ export default function AuthPage() {
     e.preventDefault();
 
     if (isSignup) {
-      const payload = { name, email, password };
+      // const payload = { name, email, password };
       if (password !== confirm) {
         toast.error("Passwords don't match!");
         return;
@@ -65,8 +65,8 @@ export default function AuthPage() {
       }
     } else {
       try {
-        const payload = { email, password };
-        await login(payload);
+        // const payload = { email, password };
+        await login(email, password);
         toast.success("Logged in successfully!");
       } catch (error: any) {
         toast.error(error.response?.data?.message || "Login failed");

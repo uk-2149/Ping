@@ -1,9 +1,10 @@
 import AuthPage from './pages/AuthPage';
 import { AuthProvider } from './context/AuthContext';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import Chat from './components/Chat';
+import Chat from './components/chat/Chat';
 import { PrivateRoute } from './auth/Private';
 import { PublicRoute } from './auth/Public';
+import Home from './pages/Home';
 
 export default function App() {
   return (
@@ -27,10 +28,10 @@ export default function App() {
               </PublicRoute>
             } />
           <Route 
-            path='/chat' 
+            path='/home' 
             element={
             <PrivateRoute>
-              <Chat />
+              <Home />
             </PrivateRoute>
           } /> 
         </Routes>
