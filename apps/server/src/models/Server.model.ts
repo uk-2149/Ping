@@ -1,12 +1,38 @@
-import mongoose from "mongoose";
+import mongoose, { Document, Schema, Types } from "mongoose";
 
-const serverSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  icon: { type: String },
-  ownerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  channels: [{ type: mongoose.Schema.Types.ObjectId, ref: "Channel" }],
-  members: [{ type: mongoose.Schema.Types.ObjectId, ref: "ServerMember" }],
-  roles: [{ type: mongoose.Schema.Types.ObjectId, ref: "Role" }],
-}, { timestamps: true });
+export interface IServerMember {
+  user: Types.ObjectId;
+  roles: Types.ObjectId[];
+  joinedAt: Date;
+}
 
-export default mongoose.model("Server", serverSchema);
+export interface IServer extends Document {
+  name: string;
+  icon?: string;
+  ownerId: Types.ObjectId;
+  channels: Types.ObjectId[];
+  members: IServerMember[];
+  roles: Types.ObjectId[];
+  createdAt: Date;
+  updatedAt: Date; 
+}
+
+const serverMemberSchema = new Schema<IServerMember>({
+  user: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  roles: [{ type: Schema.Types.ObjectId, ref: "Role" }],
+  joinedAt: { type: Date, default: Date.now },
+});
+
+const serverSchema = new Schema<IServer>(
+  {
+    name: { type: String, required: true },
+    icon: { type: String },
+    ownerId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    channels: [{ type: Schema.Types.ObjectId, ref: "Channel" }],
+    members: [serverMemberSchema],
+    roles: [{ type: Schema.Types.ObjectId, ref: "Role" }],
+  },
+  { timestamps: true }
+);
+
+export default mongoose.model<IServer>("Server", serverSchema);

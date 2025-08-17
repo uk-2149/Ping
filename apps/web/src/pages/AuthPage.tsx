@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Eye,
   EyeOff,
@@ -10,7 +10,6 @@ import {
   ArrowRight,
   ShieldCheck,
 } from "lucide-react";
-import axios from "axios";
 import { motion } from "framer-motion";
 import AnimatedBlobs from "../components/ui/AnimatedBlobs";
 import toast from "react-hot-toast";
@@ -26,6 +25,9 @@ export default function AuthPage() {
   const [confirm, setConfirm] = useState("");
   const [agree, setAgree] = useState(false);
   const [otp, setOtp] = useState("");
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
 
   const strength = useMemo(() => passwordStrength(password), [password]);
   const isSignup = mode === "signup";
@@ -46,12 +48,22 @@ export default function AuthPage() {
         toast.error("You must agree to the terms and conditions!");
         return;
       }
+      // Prevent multiple OTP requests
+      if (otpSent) {
+        toast.error("OTP already sent! Please check your email.");
+        return;
+      }
 
       try {
+        setIsLoading(true);
         await api.post("/api/otp/send-otp", { email });
+        setOtpSent(true);
+        toast.success("OTP sent successfully!");
         setMode("otp"); // Switch to OTP mode
       } catch (error: any) {
         toast.error(error.response?.data?.message || "Failed to send OTP");
+      } finally {
+        setIsLoading(false);
       }
     } else if (isOtp) {
       try {
@@ -59,7 +71,7 @@ export default function AuthPage() {
         toast.success("Account created successfully!");
         setTimeout(() => {
           login(email, password);
-        }, 1500);
+        }, 2000);
       } catch (error: any) {
         toast.error(error.response?.data?.message || "Invalid OTP");
       }
@@ -73,6 +85,10 @@ export default function AuthPage() {
       }
     }
   };
+
+  useEffect(() => {
+    setOtpSent(false);
+  }, [email]);
 
   return (
     <div className="relative min-h-dvh overflow-hidden bg-[radial-gradient(60rem_60rem_at_70%_-10%,rgba(99,102,241,0.25),transparent),radial-gradient(50rem_50rem_at_-10%_120%,rgba(37,99,235,0.25),transparent)]">
@@ -284,12 +300,21 @@ export default function AuthPage() {
 
               <motion.button
                 whileTap={{ scale: 0.98 }}
-                className="group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-[0_8px_30px_-10px_rgba(59,130,246,0.6)] transition hover:brightness-[1.05] focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/70"
+                disabled={isLoading || (isSignup && otpSent)}
+                className={`group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-[0_8px_30px_-10px_rgba(59,130,246,0.6)] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/70 ${
+                  isLoading || (isSignup && otpSent)
+                    ? 'bg-gray-600 cursor-not-allowed opacity-70'
+                    : 'bg-gradient-to-r from-violet-600 to-blue-600 hover:brightness-[1.05]'
+                }`}
               >
                 <span className="relative z-10">
-                  {isOtp ? "Verify OTP" : isSignup ? "Create account" : "Sign in"}
+                  {isLoading 
+                    ? (isOtp ? "Verifying..." : isSignup ? "Sending OTP..." : "Signing in...")
+                    : (isOtp ? "Verify OTP" : isSignup ? (otpSent ? "OTP Sent ✓" : "Create account") : "Sign in")
+                  }
                 </span>
-                <ArrowRight className="relative z-10 size-4 transition-transform group-hover:translate-x-0.5" />
+                {!isLoading && <ArrowRight className="relative z-10 size-4 transition-transform group-hover:translate-x-0.5" />}
+                {isLoading && <div className="relative z-10 size-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                 <span className="absolute inset-0 -z-0 bg-[radial-gradient(20rem_12rem_at_20%_0%,rgba(255,255,255,0.15),transparent)]" />
               </motion.button>
 

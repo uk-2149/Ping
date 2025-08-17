@@ -8,11 +8,13 @@ import {
   Bell,
   Hash,
 } from 'lucide-react';
+import FriendRequest from './FriendRequest';
 
 const Friends = () => {
-  const [activeTab, setActiveTab] = useState('All');
+  const [activeTab, setActiveTab] = useState<string | null>('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [hoveredFriend, setHoveredFriend] = useState<null | number>(null);
+  const [friendRequest, setFriendRequest] = useState<boolean>(false);
 
   //mock data
   const friends = [
@@ -86,7 +88,7 @@ const Friends = () => {
             {tabs.map((tab) => (
               <button
                 key={tab.name}
-                onClick={() => setActiveTab(tab.name)}
+                onClick={() => {setActiveTab(tab.name); setFriendRequest(false);}}
                 className={`px-2 py-1 text-sm font-medium rounded transition-all duration-200 ${
                   activeTab === tab.name
                     ? 'bg-gray-600 text-white'
@@ -101,7 +103,8 @@ const Friends = () => {
             ))}
           </div>
           
-          <button className="px-3 py-1 text-sm font-medium rounded bg-green-600 text-white hover:bg-green-500 transition-colors duration-200 flex items-center space-x-1">
+          <button className="px-3 py-1 text-sm font-medium rounded bg-green-600 text-white hover:bg-green-500 transition-colors duration-200 flex items-center space-x-1"
+            onClick={() => {setFriendRequest(true); setActiveTab(null);}}>
             <UserPlus size={14} />
             <span>Add Friend</span>
           </button>
@@ -117,7 +120,9 @@ const Friends = () => {
         </div>
       </div>
 
-      {/* Search Bar */}
+      {!friendRequest ? (
+        <>
+        {/* Search Bar */}
       <div className="px-6 py-4 border-b border-gray-600">
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
@@ -234,6 +239,8 @@ const Friends = () => {
           </div>
         </div> */}
       </div> 
+      </>
+        ) : <FriendRequest />}
     </div>
   );
 };

@@ -6,14 +6,15 @@ const transporter = nodemailer.createTransport({
   secure: false, // true for 465, false for other ports
   auth: {
     user: process.env.EMAIL,
-    pass: process.env.OTP_PASS,
+    pass: process.env.OTP_PASS?.trim(),
   },
 });
 
 export const sendEmail = async (email: string, otp: string) => {
   try {
+    console.log(process.env.EMAIL, process.env.OTP_PASS);
     const info = await transporter.sendMail({
-      from: "utkal2149@gmail.com",
+      from: process.env.EMAIL as string,
       to: email,
       subject: " Ping",
       text: `Your OTP is: ${otp}`,

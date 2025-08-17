@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from "express";
+import { Request, Response } from "express";
 import User from "../models/User.model";
 import { generateToken, verifyJWT } from "../utils/jwt";
 import bcrypt from "bcrypt";
@@ -50,7 +50,7 @@ export const SignIn = async(req: Request, res: Response): Promise<any> => {
             return res.status(400).json({ message: "Invalid password" });
         }
 
-        const userId = user._id.toString();
+        const userId = user._id as string;
 
         const token = generateToken(userId, "access");
         const ref_token = generateToken(userId, "refresh");

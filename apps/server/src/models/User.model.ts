@@ -1,20 +1,40 @@
-import mongoose from "mongoose";
+import mongoose, { Document, Schema } from "mongoose";
 
-const userSchema = new mongoose.Schema({
-  username: { type: String, unique: true, default: "not set" },
-  password: { type: String, required: true },
-  name: { type: String, required: true },
-  email: { type: String, unique: true, required: true },
-  avatar: { type: String },
-  status: {
-    type: String,
-    enum: ["ONLINE", "OFFLINE", "AWAY", "DO_NOT_DISTURB"],
-    default: "OFFLINE",
+export interface IUser extends Document {
+  username: string;
+  password: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  status: "ONLINE" | "OFFLINE" | "AWAY" | "DO_NOT_DISTURB";
+  isVerified: boolean;
+  servers: mongoose.Types.ObjectId[];   // refs to ServerMember
+  messages: mongoose.Types.ObjectId[];  // refs to Message
+  friends: mongoose.Types.ObjectId[];   // refs to other Users
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const userSchema = new Schema<IUser>(
+  {
+    username: { type: String, unique: true, default: "not set" },
+    password: { type: String, required: true },
+    name: { type: String, required: true },
+    email: { type: String, unique: true, required: true },
+    avatar: { type: String },
+    status: {
+      type: String,
+      enum: ["ONLINE", "OFFLINE", "AWAY", "DO_NOT_DISTURB"],
+      default: "OFFLINE",
+    },
+    isVerified: { type: Boolean, default: false },
+    servers: [{ type: mongoose.Schema.Types.ObjectId, ref: "Server" }],
+    messages: [{ type: mongoose.Schema.Types.ObjectId, ref: "Message" }],
+    friends: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], 
+    // dmChannels: [{ type: mongoose.Schema.Types.ObjectId, ref: "DirectMessage" }],
   },
-  isVerified: { type: Boolean, default: false },
-  servers: [{ type: mongoose.Schema.Types.ObjectId, ref: "ServerMember" }],
-  messages: [{ type: mongoose.Schema.Types.ObjectId, ref: "Message" }],
-//   dmChannels: [{ type: mongoose.Schema.Types.ObjectId, ref: "DirectMessage" }],
-}, { timestamps: true });
+  { timestamps: true }
+);
 
-export default mongoose.model("User", userSchema);
+const User = mongoose.model<IUser>("User", userSchema);
+export default User;
