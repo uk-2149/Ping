@@ -104,17 +104,17 @@ export const FriendReq = async(req: Request, res: Response): Promise<any> => {
 } 
 
 export const FriendReqAccept = async (req: Request, res: Response): Promise<any> => {
-  const { senderId, receiverId } = req.body;
+  const { requestId } = req.body;
+  const request = await FriendRequest.findById(requestId);
+  if (!request) {
+    return res.status(404).json({ message: "Friend request not found" });
+  }
+  const senderId = request.sender;
+  const receiverId = request.receiver;
   const session = await mongoose.startSession();
 
   try {
     session.startTransaction();
-
-    // Delete the friend request
-    await FriendRequest.findOneAndDelete(
-      { sender: senderId, receiver: receiverId },
-      { session }
-    );
 
     // Add each other as friends (without duplicates)
     await User.findByIdAndUpdate(
@@ -125,6 +125,12 @@ export const FriendReqAccept = async (req: Request, res: Response): Promise<any>
     await User.findByIdAndUpdate(
       receiverId,
       { $addToSet: { friends: senderId } },
+      { session }
+    );
+
+    // Delete the friend request
+    await FriendRequest.findOneAndDelete(
+      { sender: senderId, receiver: receiverId },
       { session }
     );
 
@@ -141,7 +147,13 @@ export const FriendReqAccept = async (req: Request, res: Response): Promise<any>
 };
 
 export const DeleteFriendRequest = async (req: Request, res: Response): Promise<any> => {
-    const { senderId, receiverId } = req.body;
+    const { requestId } = req.body;
+    const request = await FriendRequest.findById(requestId);
+    if (!request) {
+        return res.status(404).json({ message: "Friend request not found" });
+    }
+    const senderId = request.sender;
+    const receiverId = request.receiver;
     try {
         await FriendRequest.findOneAndDelete({ sender: senderId, receiver: receiverId });
         return res.status(200).json({ message: "Friend request deleted successfully" });
@@ -187,11 +199,45 @@ export const getFriendRequests = async(req: Request, res: Response): Promise<any
             return res.status(400).json({ message: "User not found" });
         }
         const friendRequests = await FriendRequest.find({ sender: userId })
-            .populate("sender", "username") // only bring username
-            .populate("receiver", "username"); 
+            .populate("sender", "username avatar") // only bring username
+            .populate("receiver", "username avatar"); 
         return res.status(200).json(friendRequests);
     } catch (error) {
         console.error("Error getting friend requests:", error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+export const getReceivedRequests = async(req: Request, res: Response): Promise<any> => {
+    try {
+        const token = req.cookies.token;
+        const userId = verifyJWT(token, "access") as string;
+        const user = await User.findById(userId);
+        if(!user) {
+            return res.status(400).json({ message: "User not found" });
+        }
+        const friendRequests = await FriendRequest.find({ receiver: userId })
+            .populate("sender", "username avatar") // only bring username
+            .populate("receiver", "username avatar"); 
+        return res.status(200).json(friendRequests);
+    } catch (error) {
+        console.error("Error getting friend requests:", error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+export const getFriendsList = async(req: Request, res: Response): Promise<any> => {
+    try {
+        const token = req.cookies.token;
+        const userId = verifyJWT(token, "access") as string;
+        const user = await User.findById(userId);
+        if(!user) {
+            return res.status(400).json({ message: "User not found" });
+        }
+        const friends = await User.find({ _id: { $in: user.friends } }).select("username status avatar");
+        return res.status(200).json(friends);
+    } catch (error) {
+        console.error("Error getting friends list:", error);
         return res.status(500).json({ message: "Internal server error" });
     }
 }

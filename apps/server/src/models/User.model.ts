@@ -7,10 +7,10 @@ export interface IUser extends Document {
   email: string;
   avatar?: string;
   status: "ONLINE" | "OFFLINE" | "AWAY" | "DO_NOT_DISTURB";
-  isVerified: boolean;
+  lastSeen: Date;
   servers: mongoose.Types.ObjectId[];   // refs to ServerMember
   messages: mongoose.Types.ObjectId[];  // refs to Message
-  friends: mongoose.Types.ObjectId[];   // refs to other Users
+  friends: mongoose.Types.ObjectId[];   // refs to other User
   createdAt: Date;
   updatedAt: Date;
 }
@@ -27,7 +27,7 @@ const userSchema = new Schema<IUser>(
       enum: ["ONLINE", "OFFLINE", "AWAY", "DO_NOT_DISTURB"],
       default: "OFFLINE",
     },
-    isVerified: { type: Boolean, default: false },
+    lastSeen: { type: Date, default: Date.now },
     servers: [{ type: mongoose.Schema.Types.ObjectId, ref: "Server" }],
     messages: [{ type: mongoose.Schema.Types.ObjectId, ref: "Message" }],
     friends: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], 

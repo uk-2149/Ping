@@ -1,9 +1,9 @@
 import Sidebar from '../components/SideBar';
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 // import { servers } from '../types/index';
 import Chat from '../components/chat/Chat';
 import ProfileBar from '../components/ProfileBar';
-import Friends from '../components/chat/Friends';
+import Friends from '../components/Friends/Friends';
 import api from '../lib/api';
 import UsernameModal from '../components/Username';
 
@@ -12,9 +12,11 @@ function Home() {
   const [showFriends, setShowFriends] = useState<boolean>(false);
   const [usernameSet, setUsernameSet] = useState<boolean>(false);
   const [username, setUsername] = useState<string>("");
+  const [user, setUser] = useState<any>(null);
 
   const checkUsername = async() => {
     const res = await api.get("/api/users/getUser");
+    setUser(res.data);
     if(res.data.username === "not set") {
       setUsernameSet(true);
     }
@@ -34,7 +36,7 @@ function Home() {
 
   return (
     <div className="flex h-screen bg-gray-900 text-white">
-        <ProfileBar username={username}/>
+        <ProfileBar username={username} avatar={user?.avatar}/>
         <Sidebar setActiveServer={setActiveServer} setShowFriends={setShowFriends}/>
         {activeServer == 0 && <Chat setShowFriends={setShowFriends}/>}
         {showFriends && <Friends />}

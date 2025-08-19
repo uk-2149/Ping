@@ -9,18 +9,22 @@ export default function FriendRequest() {
 
   // Handle new friend request
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!username.trim()) return;
+  e.preventDefault();
+  if (!username.trim()) return;
 
-    try {
-      const res = await api.post("/api/users/friendrequest", { username });
-      setFriendRequests((prev) => [...prev, res.data]); // append new request
-      setUsername("");
-      showToast(`Friend request sent to ${res.data.username}!`);
-    } catch (error: any) {
-      showToast(error.response?.data?.message || "Failed to send request");
-    }
-  };
+  try {
+    await api.post("/api/users/friendrequest", { username });
+    showToast(`Friend request sent to ${username}!`);
+    
+    // Refresh the list instead of appending
+    const res = await api.get("/api/users/getFriendRequests");
+    setFriendRequests(res.data);
+    
+    setUsername(""); // Clear the input
+  } catch (error: any) {
+    showToast(error.response?.data?.message || "Failed to send request");
+  }
+};
 
   // Fetch pending requests
   useEffect(() => {
@@ -90,9 +94,32 @@ export default function FriendRequest() {
                 animate={{ opacity: 1, x: 0 }}
                 className="flex justify-between items-center bg-[#0b111f] px-4 py-3 rounded-xl border border-white/5"
               >
-                <span className="text-white font-medium">{req.receiver.username}</span>
-                <span className="text-gray-400 text-xs">Pending...</span>
+                {/* Left Side: Avatar + Username */}
+                <div className="flex gap-3 items-center">
+                  <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-violet-600 to-blue-500 flex items-center justify-center text-lg font-bold text-white shadow-md overflow-hidden">
+                    <img
+                      src={req.receiver.avatar}
+                      alt={req.receiver.username}
+                      className="w-11 h-11 rounded-full object-cover"
+                    />
+                  </div>
+                  <span className="text-white font-medium">
+                    {req.receiver?.username || "Unknown User"}
+                  </span>
+                </div>
+
+                {/* Right Side: Status + Cancel Button */}
+                <div className="flex items-center gap-3">
+                  <span className="text-gray-400 text-xs">Pending</span>
+                  <button
+                    className="px-3 py-1.5 text-sm font-medium rounded-lg bg-rose-600 hover:bg-rose-500 text-white shadow-md hover:shadow-lg transition-all duration-200"
+                    title="Cancel Request"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </motion.li>
+
             ))}
           </ul>
         )}

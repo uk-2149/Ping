@@ -27,7 +27,6 @@ export const verifyOtp = async(req: Request, res: Response): Promise<any> => {
         if(!user) {
             return res.status(400).json({ message: "User not found error" });
         }
-        user.isVerified = true;
         await user.save();
         await redisClient.del(`otp:${email}`);
         return res.status(200).json({ message: "OTP verified successfully" });

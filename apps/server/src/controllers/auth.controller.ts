@@ -22,7 +22,10 @@ export const SignUp = async(req: Request, res: Response): Promise<any> => {
             return res.status(400).json({ message: "User already exists" });
         }
 
-        const user = await User.create({ name, email, password: passwordHash });
+        const seed = name + Math.floor(Math.random() * 10000);
+        const avatarUrl = `https://api.dicebear.com/9.x/notionists/svg?seed=${seed}`;
+
+        const user = await User.create({ name, email, password: passwordHash, avatar: avatarUrl });
         await user.save();
 
         return res.status(201).json({ message: "User created successfully" });
