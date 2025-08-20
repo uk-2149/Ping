@@ -79,6 +79,7 @@ export default function AuthPage() {
       try {
         // const payload = { email, password };
         await login(email, password);
+        console.log("Logged in successfully");
         toast.success("Logged in successfully!");
       } catch (error: any) {
         toast.error(error.response?.data?.message || "Login failed");
