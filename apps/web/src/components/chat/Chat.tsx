@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Users, 
   Plus, 
@@ -8,21 +8,34 @@ import {
   MoreHorizontal
 } from 'lucide-react';
 import type { User } from '../../types';
+import api from '../../lib/api';
+import CreateDM from './CreateDM';
 
 interface ChatProps {
   setShowFriends: React.Dispatch<React.SetStateAction<boolean>>;
+  setDmWindow: React.Dispatch<React.SetStateAction<boolean>>
+  setDmFriends: React.Dispatch<React.SetStateAction<any[]>>
+  dmFriends: any[]
 }
 
-const Chat: React.FC<ChatProps> = ({ setShowFriends }) => {
+const Chat: React.FC<ChatProps> = ({ setShowFriends, setDmWindow, setDmFriends, dmFriends }) => {
   // const [activeSection, setActiveSection] = useState('friends');
   const [hoveredDM, setHoveredDM] = useState<null | number>(null);
+  const [dmModal, setDMModal] = useState<boolean>(false);
+  const [friends, setFriends] = useState<any[]>([]);
 
-  const directMessages = [
-    { id: 1, username: 'noone_6954', avatar: '🐺', status: 'ONLINE', hasNotification: false },
-    { id: 2, username: 'qwer', avatar: '👤', status: 'AWAY', hasNotification: true },
-    { id: 3, username: 'kyoto', avatar: '🤖', status: 'OFFLINE', hasNotification: false, isOfficial: true },
-    { id: 4, username: 'ayu', avatar: '🧑', status: 'DO_NOT_DISTURB', hasNotification: false },
-  ];
+
+  useEffect(() => {
+    const fetchFriendLists = async () => {
+      try {
+        const res = await api.get("/api/users/getFriends");
+        setFriends(res.data);
+      } catch (error) {
+        console.error("Error fetching requests:", error);
+      }
+    };
+    fetchFriendLists();
+  }, []);
 
   const getStatusColor = (status: User['status']) => {
     switch (status) {
@@ -71,7 +84,7 @@ const Chat: React.FC<ChatProps> = ({ setShowFriends }) => {
           <div className="flex space-x-1 justify-between">
             <button 
               className={`px-3 py-1.5 text-md font-medium rounded transition-all duration-200 bg-gray-700 text-white text-left w-full hover:text-gray-300 hover:bg-gray-700/50 inline-flex gap-3 items-center`}
-              onClick={() => setShowFriends(true)}
+              onClick={() => {setShowFriends(true); setDmWindow(false)}}
               //   ${
               //   activeSection === 'friends' 
               //     ? 'bg-gray-700 text-white' 
@@ -104,12 +117,13 @@ const Chat: React.FC<ChatProps> = ({ setShowFriends }) => {
           <div className="px-2 pb-2 sm:px-4">
             <div className="flex items-center justify-between text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
               <span>Direct Messages</span>
-              <button className="hover:text-gray-300 transition-colors duration-150">
+              <button className="hover:text-gray-300 transition-colors duration-150"
+              onClick={() => setDMModal(true)}>
                 <Plus size={14} />
               </button>
             </div>
             
-            {directMessages.map((dm) => (
+            {dmFriends.map((dm) => (
               <div 
                 key={dm.id}
                 className={`group flex items-center space-x-3 p-2 rounded-lg cursor-pointer transition-all duration-200 z-100 ${
@@ -117,10 +131,11 @@ const Chat: React.FC<ChatProps> = ({ setShowFriends }) => {
                 }`}
                 onMouseEnter={() => setHoveredDM(dm.id)}
                 onMouseLeave={() => setHoveredDM(null)}
+                onClick={() => {setShowFriends(false); setDmWindow(true);}}
               >
                 <div className="relative">
                   <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-sm z-10">
-                    {dm.avatar}
+                    <img src={dm.avatar} className='w-8 h-8 rounded-full' alt={dm.username[0]} />
                   </div>
                   <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-gray-800 ${getStatusColor(dm.status)}`}></div>
                   {dm.hasNotification && (
@@ -154,6 +169,9 @@ const Chat: React.FC<ChatProps> = ({ setShowFriends }) => {
             ))}
           </div>
         </div>
+
+        {dmModal && <CreateDM setDMModal={setDMModal} friends={friends} onCreateDM={setDmFriends} setDMwindow={setDmWindow} setShowFriends={setShowFriends}/>}
+        
         </div>
   )
 } 

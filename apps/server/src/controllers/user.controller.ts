@@ -234,7 +234,7 @@ export const getFriendsList = async(req: Request, res: Response): Promise<any> =
         if(!user) {
             return res.status(400).json({ message: "User not found" });
         }
-        const friends = await User.find({ _id: { $in: user.friends } }).select("username status avatar");
+        const friends = await User.find({ _id: { $in: user.friends } }).select("_id username status avatar");
         return res.status(200).json(friends);
     } catch (error) {
         console.error("Error getting friends list:", error);
