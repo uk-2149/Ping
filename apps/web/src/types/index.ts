@@ -6,6 +6,7 @@ export interface User {
   avatar: string;
   status: "ONLINE" | "OFFLINE" | "AWAY" | "DO_NOT_DISTURB";
   createdAt?: Date;
+  lastSeen: Date;
   isVerified: boolean;
   servers: string[];
   messages: string[];

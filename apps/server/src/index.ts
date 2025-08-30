@@ -6,6 +6,7 @@ import cookieparser from "cookie-parser";
 import authRouter from "./routes/auth.routes";
 import otpRouter from "./routes/otp.routes";
 import userRouter from "./routes/user.routes";
+import chatRouter from "./routes/chat.routes";
 import { connectMongo } from "./utils/mongodb";
 import { SocketService } from "./service/socket.service";
 
@@ -28,7 +29,8 @@ async function init() {
 
     app.use("/api/auth", authRouter);
     app.use("/api/otp", otpRouter);
-    app.use("/api/users", userRouter)
+    app.use("/api/users", userRouter);
+    app.use("/api/chats", chatRouter);
 
     const httpServer = http.createServer(app);
     const socketIOService = new SocketService(httpServer);
