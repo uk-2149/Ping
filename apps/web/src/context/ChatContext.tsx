@@ -2,7 +2,6 @@ import React, { createContext, useContext, useReducer, useEffect, useRef, useCal
 import { io, Socket } from "socket.io-client";
 import api from "../lib/api";
 import { useAuth } from "./AuthContext";
-import { m, time } from "framer-motion";
 
 interface User {
   id: string;
@@ -31,13 +30,14 @@ interface Chat {
 interface ChatState {
     chats: Chat[];
     activeChat: Chat | null;
-    friends: User[];
 
+    friends: any[];
     showFriends: boolean;
     showDmWindow: boolean;
     activeServer: number | null;
     // searchQuery: string;
 
+    // User
     usernameSet: boolean;
 }
 
@@ -52,16 +52,13 @@ type ChatAction  =
     | { type: 'SET_CHATS'; payload: Chat[] }
     | { type: "ADD_NEW_CHAT"; payload: Chat }
     | { type: 'SET_ACTIVE_CHAT'; payload: Chat | null }
-    | { type: 'SET_FRIENDS'; payload: User[] }
+    | { type: 'SET_FRIENDS'; payload: any[] }
     | { type: 'SET_SHOW_FRIENDS'; payload: boolean }
     | { type: 'SET_ACTIVE_SERVER'; payload: number | null }
     | { type: 'SET_SHOW_DM_WINDOW'; payload: boolean }
     | { type: 'SEND_MESSAGE'; payload: Message }
     | { type: 'RECEIVE_MESSAGE'; payload: Message }
     | { type: 'ADD_FRIEND'; payload: User }
-    | { type: 'FRIEND_REQUEST'; payload: User }
-    | { type: 'ACCEPT_FRIEND_REQUEST'; payload: User }
-    | { type: 'REJECT_FRIEND_REQUEST'; payload: User }
     | { type: 'CREATE_DM_CHAT'; payload: { currentUser: User, friend: User } };
 
 const ChatReducer = (state: ChatState, action: ChatAction): ChatState => {
@@ -237,7 +234,7 @@ interface ChatContextType extends ChatState {
     checkUsername: () => Promise<void>;
 
     // Chat actions
-    openDmWindow: (friend: User) => void;
+    openDmWindow: (currentUser: User, friend: User) => void;
     closeDmWindow: () => void;
     setActiveChat: (chat: Chat | null) => void;
     sendMessage: (content: string) => void;
@@ -245,11 +242,7 @@ interface ChatContextType extends ChatState {
     // UI actions
     setShowFriends: (show: boolean) => void;
     setActiveServer: (serverId: number | null) => void;
-
-    // Friend actions
-    sendFriendRequest: (username: string) => Promise<void>;
-    acceptFriendRequest: (requestId: string) => Promise<void>;
-    rejectFriendRequest: (requestId: string) => Promise<void>;
+    
 }
 
 export function ChatProvider({ children }: { children: React.ReactNode }) {
@@ -464,13 +457,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         user // check
     ]);
 
-    // Separate effects for fetching chats
-    useEffect(() => {
-        if(isAuthenticated && user) {
-            fetchChats();
-        }
-    }, [fetchChats]);
-
     const fetchChats = useCallback(async () => {
         try {
             const res = await api.get("api/users/getFriends");
@@ -562,6 +548,13 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         }
     }, []);
 
+    // Separate effects for fetching chats
+    useEffect(() => {
+        if(isAuthenticated && user) {
+            fetchChats();
+        }
+    }, [fetchChats]);
+
     const setActiveChat = useCallback(async (chat: Chat | null) => {
         if(!chat) {
             dispatch({ type: 'SET_ACTIVE_CHAT', payload: null});
@@ -649,38 +642,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     // send media message
     // TODO: implement later
 
-    // friends actions
-    const sendFriendRequest = useCallback( async (username: string) => {
-        try {
-            const res = await api.post('api/user/friendrequest', { username });
-            dispatch({ type: 'FRIEND_REQUEST', payload: res.data });
-        } catch (error) {
-            console.error("Error adding friend:", error);
-        }
-    }, []);
-
-    const acceptFriendRequest = useCallback( async (requestId: string) => {
-        try {
-            const res = await api.post('api/user/acceptFriendRequest', { requestId });
-            dispatch({ type: 'ACCEPT_FRIEND_REQUEST', payload: res.data });
-        } catch (error) {
-            console.error("Error accepting friend request:", error);
-        }
-    }, []);
-
-    const rejectFriendRequest = useCallback( async (requestId: string) => {
-        try {
-            const res = await api.post('api/user/rejectFriendRequest', { requestId });
-            dispatch({ type: 'REJECT_FRIEND_REQUEST', payload: res.data });
-        } catch (error) {
-            console.error("Error rejecting friend request:", error);
-        }
-    }, []);
-
     // DM Window
-    const openDmWindow = useCallback((friend: User) => {
+    const openDmWindow = useCallback((currentUser: User, friend: User) => {
         if (user) {
-            dispatch({ type: 'CREATE_DM_CHAT', payload: { currentUser: user, friend } });
+            dispatch({ type: 'CREATE_DM_CHAT', payload: { currentUser, friend } });
         } else {
             console.error("User is null, cannot open DM window");
         }
@@ -721,6 +686,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         }
     }, [user]);
 
+    useEffect(() => {
+        checkUsername();
+    }, []);
+
     // UI action helpers
     const setShowFriends = useCallback((show: boolean) => {
         dispatch({ type: 'SET_SHOW_FRIENDS', payload: show });
@@ -735,9 +704,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             ...state, 
             setActiveChat, 
             sendMessage, 
-            sendFriendRequest, 
-            acceptFriendRequest, 
-            rejectFriendRequest,
             checkUsername,
             setUsername,
             openDmWindow,
@@ -749,4 +715,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         </ChatContext.Provider>
 
     )
+}
+
+export function useChat(): ChatContextType {
+  const context = useContext(ChatContext);
+  if (context === undefined) {
+    throw new Error('useChat must be used within a ChatProvider');
+  }
+  return context;
 }

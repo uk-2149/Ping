@@ -5,6 +5,7 @@ import Chat from './components/chat/Chat';
 import { PrivateRoute } from './auth/Private';
 import { PublicRoute } from './auth/Public';
 import Home from './pages/Home';
+import { ChatProvider } from './context/ChatContext';
 
 export default function App() {
   return (
@@ -31,7 +32,9 @@ export default function App() {
             path='/home' 
             element={
             <PrivateRoute>
+              <ChatProvider>
               <Home />
+              </ChatProvider>
             </PrivateRoute>
           } /> 
         </Routes>

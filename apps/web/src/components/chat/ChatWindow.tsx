@@ -1,29 +1,37 @@
-import { useState } from "react";
+import { use, useState } from "react";
 import { motion } from "framer-motion";
 import MessageBlock from "./MessageBlock";
 import UserInfoPanel from "./UserInfo";
 
 import type { MessageBlockProps } from "./MessageBlock";
+import { useAuth } from "../../context/AuthContext";
+import { useChat } from "../../context/ChatContext";
 
-interface ChatWindowProps {
-    user: any;
-}
 
-export default function DmChatWindow({ user }: ChatWindowProps) {
+export default function DmChatWindow() {
+
+  const {
+    user
+  } = useAuth();
+
+  const {
+    activeChat
+  } = useChat();
+
   const [messages, setMessages] = useState<MessageBlockProps[]>([
     {
       id: 1,
       text: "Hey! How are you doing?",
-      username: "_uk_2149",
-      avatar: "https://i.pravatar.cc/40?img=12",
+      username: user.username,
+      avatar: user.avatar,
       time: "09/03/2024, 23:05",
       type: "normal",
     },
     {
       id: 2,
       text: "You missed a call from noone_6954 that lasted a few seconds.",
-      username: "System",
-      avatar: "",
+      username: activeChat?.participants[1].username,
+      avatar: activeChat?.participants[1].avatar,
       time: "24/11/2024, 14:32",
       type: "system",
     },
@@ -32,7 +40,7 @@ export default function DmChatWindow({ user }: ChatWindowProps) {
   const [showInfo, setShowInfo] = useState(false);
 
   return (
-    <div className="flex h-screen w-full bg-[#0b111f] text-white">
+    <div className="flex h-screen w-full sm:w-4/5 bg-[#0b111f] text-white">
       {/* Chat Section */}
       <div className="flex flex-col flex-1">
         <div className="py-2 px-4 border-b border-gray-700 bg-[#0b111f] shadow-lg flex items-center justify-center">
@@ -94,7 +102,7 @@ export default function DmChatWindow({ user }: ChatWindowProps) {
             >
               ✕
             </button>
-            <UserInfoPanel user={user}/>
+            <UserInfoPanel />
           </div>
         </div>
       )}

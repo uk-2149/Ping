@@ -1,19 +1,19 @@
-import api from "../../lib/api";
+import { useFriends } from "../../context/FriendsContext";
 import { toast } from "react-hot-toast";
 
 interface PendingReceivedRequestCardProps {
   request: any;
-  onRequestUpdate: (requestId: string) => void; // Add this prop
 }
 
-const PendingReceivedRequestCard: React.FC<PendingReceivedRequestCardProps> = ({ request, onRequestUpdate }) => {
+const PendingReceivedRequestCard: React.FC<PendingReceivedRequestCardProps> = ({ request }) => {
+
+    const { acceptFriendRequest, rejectFriendRequest } = useFriends();
 
     const onAccept = async () => {
       try {
         console.log("Accepting friend request:", request._id);
-        await api.post("/api/users/acceptFriendRequest", { requestId: request._id });
+        await acceptFriendRequest(request._id);
         alert("Friend request accepted!");
-        onRequestUpdate(request.id);
         toast.success("Friend request accepted!");
       } catch (error: any) {
         toast.error(error.response?.data?.message || "Failed to accept request");
@@ -22,9 +22,8 @@ const PendingReceivedRequestCard: React.FC<PendingReceivedRequestCardProps> = ({
 
     const onReject = async () => {
       try {
-        await api.post("/api/users/declineFriendRequest", { requestId: request._id });
+        await rejectFriendRequest(request._id);
         alert("Friend request rejected!");
-        onRequestUpdate(request.id);
         toast.success("Friend request rejected!");
       } catch (error: any) {
         toast.error(error.response?.data?.message || "Failed to reject request");

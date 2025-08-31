@@ -11,6 +11,7 @@ export interface IUser extends Document {
   servers: mongoose.Types.ObjectId[];   // refs to ServerMember
   messages: mongoose.Types.ObjectId[];  // refs to Message
   friends: mongoose.Types.ObjectId[];   // refs to other User
+  dmfriends: mongoose.Types.ObjectId[];  // refs to User
   createdAt: Date;
   updatedAt: Date;
 }
@@ -31,6 +32,7 @@ const userSchema = new Schema<IUser>(
     servers: [{ type: mongoose.Schema.Types.ObjectId, ref: "Server" }],
     messages: [{ type: mongoose.Schema.Types.ObjectId, ref: "Message" }],
     friends: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], 
+    dmfriends: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], 
     // dmChannels: [{ type: mongoose.Schema.Types.ObjectId, ref: "DirectMessage" }],
   },
   { timestamps: true }

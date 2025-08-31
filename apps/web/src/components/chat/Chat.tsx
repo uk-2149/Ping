@@ -10,20 +10,32 @@ import {
 import type { User } from '../../types';
 import api from '../../lib/api';
 import CreateDM from './CreateDM';
+import { useChat } from '../../context/ChatContext';
+import { useAuth } from '../../context/AuthContext';
 
 interface ChatProps {
-  setShowFriends: React.Dispatch<React.SetStateAction<boolean>>;
-  setDmWindow: React.Dispatch<React.SetStateAction<boolean>>
   setDmFriends: React.Dispatch<React.SetStateAction<any[]>>
   dmFriends: any[]
 }
 
-const Chat: React.FC<ChatProps> = ({ setShowFriends, setDmWindow, setDmFriends, dmFriends }) => {
+const Chat: React.FC<ChatProps> = ({ setDmFriends, dmFriends }) => {
   // const [activeSection, setActiveSection] = useState('friends');
   const [hoveredDM, setHoveredDM] = useState<null | number>(null);
   const [dmModal, setDMModal] = useState<boolean>(false);
   const [friends, setFriends] = useState<any[]>([]);
 
+  const {
+    setShowFriends,
+    openDmWindow,
+    closeDmWindow,
+    showDmWindow,
+    showFriends,
+    activeChat
+  } = useChat();
+
+  const {
+    user
+  } = useAuth();
 
   useEffect(() => {
     const fetchFriendLists = async () => {
@@ -36,6 +48,10 @@ const Chat: React.FC<ChatProps> = ({ setShowFriends, setDmWindow, setDmFriends, 
     };
     fetchFriendLists();
   }, []);
+
+  useEffect(() => {
+  console.log("activeChat changed:", activeChat);
+}, [activeChat])
 
   const getStatusColor = (status: User['status']) => {
     switch (status) {
@@ -74,7 +90,7 @@ const Chat: React.FC<ChatProps> = ({ setShowFriends, setDmWindow, setDmFriends, 
             <input 
               type="text" 
               placeholder="Find or start a conversation"
-              className="w-full bg-gray-900 text-gray-300 text-sm px-10 py-2 rounded border-none focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200"
+              className={`w-full bg-gray-900 text-gray-300 text-sm px-10 py-2 rounded border-none focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200`}
             />
           </div>
         </div>
@@ -83,8 +99,8 @@ const Chat: React.FC<ChatProps> = ({ setShowFriends, setDmWindow, setDmFriends, 
         <div className="px-2 py-4 sm:px-4 w-full">
           <div className="flex space-x-1 justify-between">
             <button 
-              className={`px-3 py-1.5 text-md font-medium rounded transition-all duration-200 bg-gray-700 text-white text-left w-full hover:text-gray-300 hover:bg-gray-700/50 inline-flex gap-3 items-center`}
-              onClick={() => {setShowFriends(true); setDmWindow(false)}}
+              className={`px-3 py-1.5 text-md font-medium rounded transition-all duration-200 text-white text-left w-full hover:text-gray-300 hover:bg-gray-700/50 inline-flex gap-3 items-center ${showFriends ? 'bg-gray-700' : ''}`}
+              onClick={() => {closeDmWindow(); setShowFriends(!showFriends);}}
               //   ${
               //   activeSection === 'friends' 
               //     ? 'bg-gray-700 text-white' 
@@ -128,10 +144,12 @@ const Chat: React.FC<ChatProps> = ({ setShowFriends, setDmWindow, setDmFriends, 
                 key={dm.id}
                 className={`group flex items-center space-x-3 p-2 rounded-lg cursor-pointer transition-all duration-200 z-100 ${
                   hoveredDM === dm.id ? 'bg-gray-700' : 'hover:bg-gray-700/70'
+                } ${
+                  activeChat && (activeChat?.participants[0].id === dm.id || activeChat?.participants[1].id === dm.id) ? 'bg-gray-700' : ''
                 }`}
                 onMouseEnter={() => setHoveredDM(dm.id)}
                 onMouseLeave={() => setHoveredDM(null)}
-                onClick={() => {setShowFriends(false); setDmWindow(true);}}
+                onClick={() => {openDmWindow(user, dm); console.log("activeChat:", activeChat, "dm.id:", dm.id);}}
               >
                 <div className="relative">
                   <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-sm z-10">
@@ -170,7 +188,7 @@ const Chat: React.FC<ChatProps> = ({ setShowFriends, setDmWindow, setDmFriends, 
           </div>
         </div>
 
-        {dmModal && <CreateDM setDMModal={setDMModal} friends={friends} onCreateDM={setDmFriends} setDMwindow={setDmWindow} setShowFriends={setShowFriends}/>}
+        {dmModal && <CreateDM setDMModal={setDMModal} friends={friends} onCreateDM={setDmFriends} />}
         
         </div>
   )

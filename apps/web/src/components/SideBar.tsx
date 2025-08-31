@@ -4,13 +4,9 @@ import {
   Plus
 } from 'lucide-react';
 import { servers } from '../types/index';
+import { useChat } from '../context/ChatContext';
 
-interface SideBarProps {
-  setActiveServer: React.Dispatch<React.SetStateAction<number | null>>;
-  setShowFriends: React.Dispatch<React.SetStateAction<boolean>>;
-}
-
-const Sidebar: React.FC<SideBarProps> = ({ setActiveServer, setShowFriends }) => {
+const Sidebar = () => {
   // const [activeSection, setActiveSection] = useState('friends');
   const [hoveredServer, setHoveredServer] = useState<null | number>(null);
 //   const [hoveredDM, setHoveredDM] = useState(null);
@@ -43,6 +39,11 @@ const Sidebar: React.FC<SideBarProps> = ({ setActiveServer, setShowFriends }) =>
 //       default: return 'bg-gray-500';
 //     }
 //   };
+
+  const {
+    setShowFriends,
+    setActiveServer,
+  } = useChat();
 
   return (
     <>

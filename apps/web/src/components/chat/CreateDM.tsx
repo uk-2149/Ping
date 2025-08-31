@@ -1,6 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { useState } from "react";
+import { useChat } from "../../context/ChatContext";
+import { useAuth } from "../../context/AuthContext";
 
 // interface Friend {
 //   id: string;
@@ -12,12 +14,20 @@ interface DMModalProps {
   setDMModal: React.Dispatch<React.SetStateAction<boolean>>;
   friends: any[];
   onCreateDM: React.Dispatch<React.SetStateAction<any[]>>;
-  setDMwindow: React.Dispatch<React.SetStateAction<boolean>>;
-  setShowFriends: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export default function CreateDM({ setDMModal, friends, onCreateDM, setDMwindow, setShowFriends }: DMModalProps) {
+export default function CreateDM({ setDMModal, friends, onCreateDM }: DMModalProps) {
   const [selectedFriends, setSelectedFriends] = useState<any[]>([]);
+
+  const {
+    openDmWindow,
+    closeDmWindow,
+    setShowFriends
+  } = useChat();
+
+  const {
+    user,
+  } = useAuth();
 
   const toggleFriend = (fd) => {
     setSelectedFriends((prev) => {
@@ -115,7 +125,7 @@ export default function CreateDM({ setDMModal, friends, onCreateDM, setDMwindow,
                 onClick={() => {
                   onCreateDM(selectedFriends);
                   setDMModal(false);
-                  setDMwindow(true);
+                  openDmWindow(user, selectedFriends[0]);
                   setShowFriends(false);
                 }}
                 disabled={selectedFriends.length === 0}

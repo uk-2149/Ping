@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { 
   Users, 
   Search, 
@@ -12,7 +12,7 @@ import FriendRequest from './FriendRequest';
 import FriendCard from './FriendCard';
 import PendingReceivedRequestCard from './PendingReceivedRequest';
 import EmptyState from './EmptyState';
-import api from '../../lib/api';
+import { useFriends } from '../../context/FriendsContext';
 
 // Helper types
 export interface Friend {
@@ -31,104 +31,44 @@ const FriendsMainContent = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [hoveredFriend, setHoveredFriend] = useState<number | null>(null);
   const [showAddFriend, setShowAddFriend] = useState(false);
-  const [ReceivedRequests, setReceivedRequests] = useState<any[]>([]);
-  const [friends, setFriends] = useState<any[]>([]);
+  // const [ReceivedRequests, setReceivedRequests] = useState<any[]>([]);
+  // const [friends, setFriends] = useState<any[]>([]);
+
+  const {
+    friends,
+    receivedRequests
+  } = useFriends();
 
   // Callback function to remove a request from the UI
-const handleRequestUpdate = (requestId: string) => {
-  setReceivedRequests(prev => 
-    prev.filter(request => request._id !== requestId)
-  );
-};
+// const handleRequestUpdate = (requestId: string) => {
+//   setReceivedRequests(prev => 
+//     prev.filter(request => request._id !== requestId)
+//   );
+// };
 
-   useEffect(() => {
-    const fetchFriendRequests = async () => {
-      try {
-        const res = await api.get("/api/users/getReceivedRequests");
-        setReceivedRequests(res.data);
-      } catch (error) {
-        console.error("Error fetching requests:", error);
-      }
-    };
-    fetchFriendRequests();
-  }, []);
+  //  useEffect(() => {
+  //   const fetchFriendRequests = async () => {
+  //     try {
+  //       const res = await api.get("/api/users/getReceivedRequests");
+  //       setReceivedRequests(res.data);
+  //     } catch (error) {
+  //       console.error("Error fetching requests:", error);
+  //     }
+  //   };
+  //   fetchFriendRequests();
+  // }, []);
 
-  useEffect(() => {
-    const fetchFriendLists = async () => {
-      try {
-        const res = await api.get("/api/users/getFriends");
-        setFriends(res.data);
-      } catch (error) {
-        console.error("Error fetching requests:", error);
-      }
-    };
-    fetchFriendLists();
-  }, []);
-
-
-  // const friends: Friend[] = [
-  //   {
-  //     id: 1,
-  //     username: '4bhinyash',
-  //     discriminator: '#0001',
-  //     avatar: '👨',
-  //     status: 'ONLINE',
-  //     lastSeen: 'Online',
-  //     activity: 'Playing Valorant',
-  //     mutual: 3
-  //   },
-  //   {
-  //     id: 2,
-  //     username: 'noone_6954',
-  //     discriminator: '#6954',
-  //     avatar: '🐺',
-  //     status: 'AWAY',
-  //     lastSeen: 'Away',
-  //     activity: null,
-  //     mutual: 1
-  //   },
-  //   {
-  //     id: 3,
-  //     username: 'Nova',
-  //     discriminator: '#7890',
-  //     avatar: '⭐',
-  //     status: 'DO_NOT_DISTURB',
-  //     lastSeen: 'Do Not Disturb',
-  //     activity: 'Streaming on Twitch',
-  //     mutual: 5
-  //   },
-  //   {
-  //     id: 4,
-  //     username: 'CodeMaster',
-  //     discriminator: '#1234',
-  //     avatar: '💻',
-  //     status: 'ONLINE',
-  //     lastSeen: 'Online',
-  //     activity: 'Coding in VS Code',
-  //     mutual: 2
-  //   },
-  //   {
-  //     id: 5,
-  //     username: 'GamerPro',
-  //     discriminator: '#5678',
-  //     avatar: '🎮',
-  //     status: 'OFFLINE',
-  //     lastSeen: 'Last seen 2 hours ago',
-  //     activity: null,
-  //     mutual: 1
-  //   }
-  // ];
-
-  // Mock pending requests
-  // const pendingRequests: PendingRequest[] = [
-  //   {
-  //     id: 1,
-  //     username: 'NewFriend123',
-  //     discriminator: '#9999',
-  //     avatar: '🤝',
-  //     type: 'incoming'
-  //   }
-  // ];
+  // useEffect(() => {
+  //   const fetchFriendLists = async () => {
+  //     try {
+  //       const res = await api.get("/api/users/getFriends");
+  //       setFriends(res.data);
+  //     } catch (error) {
+  //       console.error("Error fetching requests:", error);
+  //     }
+  //   };
+  //   fetchFriendLists();
+  // }, []);
 
   const getFilteredFriends = () => {
     let filtered = friends;
@@ -142,7 +82,7 @@ const handleRequestUpdate = (requestId: string) => {
         filtered = friends;
         break;
       case 'Pending':
-        return ReceivedRequests;
+        return receivedRequests;
       case 'Blocked':
         return [];
       default:
@@ -175,7 +115,7 @@ const handleRequestUpdate = (requestId: string) => {
   const tabs = [
     { name: 'Online', count: onlineFriends.length },
     { name: 'All', count: friends.length },
-    { name: 'Pending', count: ReceivedRequests.length },
+    { name: 'Pending', count: receivedRequests.length },
     { name: 'Blocked', count: 0 }
   ];
 
@@ -285,7 +225,7 @@ const handleRequestUpdate = (requestId: string) => {
               ) : activeTab === 'Pending' ? (
                 // Render pending requests only
                 (filteredFriends).map((request) => (
-                  <PendingReceivedRequestCard key={request.sender} request={request} onRequestUpdate={handleRequestUpdate}/>
+                  <PendingReceivedRequestCard key={request.sender} request={request} />
                 ))
               ) : filteredFriends.length > 0 ? (
                 // Render friends only

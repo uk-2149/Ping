@@ -1,12 +1,18 @@
-interface UserInfoPanelProps {
-    user: any;
-}
+import { useChat } from "../../context/ChatContext";
 
-export default function UserInfoPanel({ user }: UserInfoPanelProps) {
+
+export default function UserInfoPanel() {
+
+  const {
+    activeChat
+  } = useChat()
+
+  const user = activeChat?.participants[1];
+
   return (
     <div className="flex flex-col items-center text-center p-4">
       <img
-        src="https://i.pravatar.cc/100?img=12"
+        src={user.avatar}
         alt="user avatar"
         className="w-24 h-24 rounded-full mb-3"
       />
