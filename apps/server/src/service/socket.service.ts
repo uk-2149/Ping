@@ -91,7 +91,7 @@ export class SocketService {
 
             console.log(`User ${userId} connected with socket ID: ${socket.id}`);
 
-            socket.on("one_to_one_message", async(data) => {
+            socket.on("dm_message", async(data) => {
                 const {to, message} = data;
 
                 if(!to || !message) {
@@ -218,7 +218,7 @@ export class SocketService {
                 };
 
                 if(toSocketId) {
-                    this._io.to(toSocketId).emit("one_to_one_message", obj_data);
+                    this._io.to(toSocketId).emit("dm_message", obj_data);
                     await newMsg.save();
 
                     console.log(`Message sent from ${from} to ${to} with socket ID: ${toSocketId}`);

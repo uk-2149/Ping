@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 
 export interface MessageBlockProps {
+  id: string;
   text: string;
   username: string;
   avatar?: string;

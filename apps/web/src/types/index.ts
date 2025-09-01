@@ -10,6 +10,8 @@ export interface User {
   isVerified: boolean;
   servers: string[];
   messages: string[];
+  friends: string[];
+  dmFriends: string[];
 }
 
 export interface AuthState {

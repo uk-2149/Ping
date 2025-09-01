@@ -1,15 +1,18 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useChat } from "../context/ChatContext";
 
-export default function UsernameModal({ onSubmit }: {
-  onSubmit: (username: string) => void;
-}) {
-  const [username, setUsername] = useState("");
+export default function UsernameModal() {
+  const [username, setUname] = useState("");
+
+  const {
+    setUsername,
+  } = useChat()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (username.trim()) {
-      onSubmit(username.trim());
+      setUsername(username.trim());
     }
   };
 
@@ -39,7 +42,7 @@ export default function UsernameModal({ onSubmit }: {
               <input
                 type="text"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => setUname(e.target.value)}
                 placeholder="Enter username"
                 className="w-full px-4 py-3 rounded-xl bg-gray-800 border border-gray-700 
                            focus:outline-none focus:ring-2 focus:ring-violet-500 

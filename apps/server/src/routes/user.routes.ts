@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { DeleteFriendRequest, FriendReq, FriendReqAccept, getFriendRequests, getFriendsList, getReceivedRequests, getUser, setUsername } from "../controllers/user.controller";
+import { addDmFriend, DeleteFriendRequest, FriendReq, FriendReqAccept, getDmFriendsList, getFriendRequests, getFriendsList, getReceivedRequests, getUser, setUsername } from "../controllers/user.controller";
+import { get } from "http";
 
 const router = Router();
 
@@ -11,5 +12,7 @@ router.get("/getReceivedRequests", getReceivedRequests);
 router.post("/acceptFriendRequest", FriendReqAccept);
 router.post("/declineFriendRequest", DeleteFriendRequest);
 router.get("/getFriends", getFriendsList);
+router.post('/addDm', addDmFriend);
+router.get('/getDm', getDmFriendsList);
 
 export default router;

@@ -241,3 +241,40 @@ export const getFriendsList = async(req: Request, res: Response): Promise<any> =
         return res.status(500).json({ message: "Internal server error" });
     }
 }
+
+export const addDmFriend = async(req: Request, res: Response): Promise<any> => {
+    const { friendId } = req.body;
+    try {
+        const token = req.cookies.token;
+        const userId = verifyJWT(token, "access") as string;
+        const user = await User.findById(userId);
+        if(!user) {
+            return res.status(400).json({ message: "User not found" });
+        }
+        if(user.dmFriends.includes(friendId)) {
+            return res.status(400).json({ message: "User is already on your DM List" });
+        }
+        user.dmFriends.push(friendId);
+        await user.save();
+        return res.status(200).json({ message: "DM added successfully" });
+    } catch (error) {
+        console.error("Error creating DM:", error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+export const getDmFriendsList = async(req: Request, res: Response): Promise<any> => {
+    try {
+        const token = req.cookies.token;
+        const userId = verifyJWT(token, "access") as string;
+        const user = await User.findById(userId);
+        if(!user) {
+            return res.status(400).json({ message: "User not found" });
+        }
+        const dmfriends = await User.find({ _id: { $in: user.dmFriends } }).select("_id username status avatar lastSeen");
+        return res.status(200).json(dmfriends);
+    } catch (error) {
+        console.error("Error getting DM friends list:", error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}

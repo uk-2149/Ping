@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import { useState } from "react";
 import { useChat } from "../../context/ChatContext";
 import { useAuth } from "../../context/AuthContext";
+import { useFriends } from "../../context/FriendsContext";
 
 // interface Friend {
 //   id: string;
@@ -12,18 +13,20 @@ import { useAuth } from "../../context/AuthContext";
 
 interface DMModalProps {
   setDMModal: React.Dispatch<React.SetStateAction<boolean>>;
-  friends: any[];
-  onCreateDM: React.Dispatch<React.SetStateAction<any[]>>;
 }
 
-export default function CreateDM({ setDMModal, friends, onCreateDM }: DMModalProps) {
+export default function CreateDM({ setDMModal }: DMModalProps) {
   const [selectedFriends, setSelectedFriends] = useState<any[]>([]);
 
   const {
     openDmWindow,
     closeDmWindow,
-    setShowFriends
+    setShowFriends,
   } = useChat();
+
+  const {
+    friends
+  } = useFriends();
 
   const {
     user,
@@ -123,7 +126,6 @@ export default function CreateDM({ setDMModal, friends, onCreateDM }: DMModalPro
               </button>
               <button
                 onClick={() => {
-                  onCreateDM(selectedFriends);
                   setDMModal(false);
                   openDmWindow(user, selectedFriends[0]);
                   setShowFriends(false);
