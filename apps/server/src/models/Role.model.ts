@@ -3,7 +3,7 @@ import mongoose, { Document, Schema, Model } from "mongoose";
 export interface IRole extends Document {
   name: string;
   permissions: Record<string, any>;
-  serverId: mongoose.Types.ObjectId;
+  serverid: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -13,8 +13,8 @@ const roleSchema = new Schema<IRole>(
   {
     name: { type: String, required: true },
     permissions: { type: Schema.Types.Mixed }, // can refine to enum/bitfield later
-    serverId: { type: Schema.Types.ObjectId, ref: "Server", required: true },
-    // members: [{ type: Schema.Types.ObjectId, ref: "ServerMember" }],
+    serverid: { type: Schema.Types.ObjectId, ref: "Server", required: true },
+    // members: [{ type: Schema.Types.Objectid, ref: "ServerMember" }],
   },
   { timestamps: true }
 );

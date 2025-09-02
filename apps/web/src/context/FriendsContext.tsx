@@ -10,8 +10,8 @@ export interface User {
 interface FriendsContextType {
   friends: any[];
   receivedRequests: string[];
-  acceptFriendRequest: (requestId: string) => Promise<void>;
-  rejectFriendRequest: (requestId: string) => Promise<void>;
+  acceptFriendRequest: (requestid: string) => Promise<void>;
+  rejectFriendRequest: (requestid: string) => Promise<void>;
 }
 
 interface FriendsState {
@@ -20,7 +20,7 @@ interface FriendsState {
 }
 
 type FriendsAction =
-  | { type: 'ACCEPT_FRIEND_REQUEST'; payload: { requestId: string } }
+  | { type: 'ACCEPT_FRIEND_REQUEST'; payload: { requestid: string } }
   | { type: 'REJECT_FRIEND_REQUEST'; payload: string }
   | { type: 'SET_FRIENDS'; payload: User[] }
   | { type: 'SET_RECEIVED_REQUESTS'; payload: string[] };
@@ -32,7 +32,7 @@ const friendsReducer = (state: FriendsState, action: FriendsAction): FriendsStat
     case 'ACCEPT_FRIEND_REQUEST':
       return {
         ...state,
-        receivedRequests: state.receivedRequests.filter((id) => id !== action.payload.requestId),
+        receivedRequests: state.receivedRequests.filter((id) => id !== action.payload.requestid),
       };
     case 'REJECT_FRIEND_REQUEST':
       return {
@@ -68,20 +68,20 @@ export const FriendsProvider = ({ children }: { children: React.ReactNode }) => 
     fetchFriendLists();
   }, []);
 
-  const acceptFriendRequest = useCallback(async (requestId: string) => {
+  const acceptFriendRequest = useCallback(async (requestid: string) => {
     try {
-      await api.post('/api/users/acceptFriendRequest', { requestId });
-      dispatch({ type: 'ACCEPT_FRIEND_REQUEST', payload: { requestId } });
+      await api.post('/api/users/acceptFriendRequest', { requestid });
+      dispatch({ type: 'ACCEPT_FRIEND_REQUEST', payload: { requestid } });
       fetchFriendLists();
     } catch (error) {
       console.error("Error accepting friend request:", error);
     }
   }, []);
 
-  const rejectFriendRequest = useCallback(async (requestId: string) => {
+  const rejectFriendRequest = useCallback(async (requestid: string) => {
     try {
-      await api.post('/api/users/declineFriendRequest', { requestId });
-      dispatch({ type: 'REJECT_FRIEND_REQUEST', payload: requestId });
+      await api.post('/api/users/declineFriendRequest', { requestid });
+      dispatch({ type: 'REJECT_FRIEND_REQUEST', payload: requestid });
     } catch (error) {
       console.error("Error rejecting friend request:", error);
     }

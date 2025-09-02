@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const transformUser = useCallback((userData: any): User => {
     return {
-      id: userData._id || userData.id,
+      _id: userData._id || userData.id,
       username: userData.username,
       name: userData.name,
       email: userData.email,
@@ -67,6 +67,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isVerified: userData.isVerified,
       servers: userData.servers,
       messages: userData.messages,
+      dmFriends: userData.dmFriends,
+      lastSeen: new Date(userData.lastSeen),
+      friends: userData.friends
     };
   }, []);
 

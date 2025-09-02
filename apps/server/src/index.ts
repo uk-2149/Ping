@@ -39,7 +39,7 @@ async function init() {
         console.log(`Server running on port ${PORT}`);
     });
 
-    connectMongo();
+     connectMongo();
 
     socketIOService.initListeners();
 }

@@ -3,6 +3,6 @@ import { authenticate } from "../middlewares/auth.middleware";
 import { getChats } from "../controllers/chat.controller";
 const chatRouter = express.Router();
 
-chatRouter.get("/:userId/messages", authenticate, getChats);
+chatRouter.get("/:userid/messages", authenticate, getChats);
 
 export default chatRouter;

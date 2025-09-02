@@ -40,9 +40,9 @@ const FriendsMainContent = () => {
   } = useFriends();
 
   // Callback function to remove a request from the UI
-// const handleRequestUpdate = (requestId: string) => {
+// const handleRequestUpdate = (requestid: string) => {
 //   setReceivedRequests(prev => 
-//     prev.filter(request => request._id !== requestId)
+//     prev.filter(request => request._id !== requestid)
 //   );
 // };
 

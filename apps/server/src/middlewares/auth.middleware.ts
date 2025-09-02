@@ -7,9 +7,9 @@ export const authenticate = async (req: any, res: any, next: any) => {
     return res.status(401).json({ error: "Authentication token is required." });
   }
   try {
-    const userId = verifyJWT(token, "access") as string;
+    const userid = verifyJWT(token, "access") as string;
     const user = await User.findOne({
-      _id: userId,
+      _id: userid,
     });
 
     req.user = user;

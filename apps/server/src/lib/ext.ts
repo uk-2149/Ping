@@ -1,4 +1,4 @@
-// redis map userid -> socketId key
-export const socketKey = (userId: string): string => {
-  return `socket:${userId}`;
+// redis map userid -> socketid key
+export const socketKey = (userid: string): string => {
+  return `socket:${userid}`;
 };

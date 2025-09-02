@@ -3,7 +3,7 @@ import { Server as httpServer } from "http";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import * as cookie from "cookie";
-import MessageModel from "../models/Message.model";
+import MessageModel, { IMessage } from "../models/Message.model";
 import User from "../models/User.model";
 import { pub, sub } from "../utils/redisClient";
 import { socketKey } from "../lib/ext";
@@ -18,222 +18,169 @@ export class SocketService {
             cors: {
                 origin: "http://localhost:5173",
                 credentials: true,
-                // methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-                // allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
             },
             transports: ["websocket", "polling"],
         });
 
-    // JWT authentication middleware
-    this._io.use((socket, next) => {
-        const cookies = socket.handshake.headers.cookie;
-        if(!cookies) return next(new Error("No cookie found"));
+        // JWT authentication middleware
+        this._io.use((socket, next) => {
+            const cookies = socket.handshake.headers.cookie;
+            if(!cookies) return next(new Error("No cookie found"));
 
-        const parsedCookie = cookie.parse(cookies);
-        const token = parsedCookie.token;
+            const parsedCookie = cookie.parse(cookies);
+            const token = parsedCookie.token;
 
-        if(!token) return next(new Error("Authentication token required"));
+            if(!token) return next(new Error("Authentication token required"));
 
-        try {
-            const payload = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
-            socket.data.userId = payload.userId;
-            return next();
-        } catch (error) {
-            return next(new Error("Invalid or Expired token"));
-        }
-    });
-    sub.subscribe("Ping", (message: string, channel: string) => {
-        console.log(`Received message on ${channel}: ${message}`);
-    });
-    }
-    
-    private async findUserByEmail(email: string) {
-        try {
-            const user = await User.findOne({ email: email });
-            if(!user) {
-                throw new Error("User not found");
+            try {
+                const payload = jwt.verify(token, process.env.JWT_SECRET!) as { userid: string };
+                socket.data.userid = payload.userid;
+                return next();
+            } catch (error) {
+                return next(new Error("Invalid or Expired token"));
             }
-            return user;
-        } catch(error) {
-            console.error("Error finding user", error);
-            throw error;
-        }
+        });
+
+        sub.subscribe("Ping", (message: string, channel: string) => {
+            console.log(`Received message on ${channel}: ${message}`);
+        });
     }
     
     public initListeners(): void {
         const io = this._io;
 
         io.on("connection", async (socket) => {
-            const userId = socket.data.userId;
+            const userid = socket.data.userid;
 
-            if(!userId) {
-                console.error("User ID not found");
+            if(!userid) {
+                console.error("User id not found");
                 return;
             }
 
-            console.log(`New connection: ${userId} with socket ID: ${socket.id}`);
+            console.log(`New connection: ${userid} with socket id: ${socket.id}`);
 
             try {
-                await User.findOneAndUpdate(userId, {
+                await User.findByIdAndUpdate(userid, {
                     lastSeen: new Date(),
                     status: "ONLINE",
                 });
 
-                await this.broadcastUserStatusChange(userId.toString(), true);
+                await this.broadcastUserStatusChange(userid.toString(), "ONLINE");
             } catch(error) {
                 console.error("Error updating user status", error);
                 return;
             }
 
-            // redis map upload userId -> socketId
-            await pub.set(socketKey(userId), socket.id, { EX: 60*10 });
-            socket.emit("connected", { socketId: socket.id });
+            // Redis map: userid -> socketid
+            await pub.set(socketKey(userid), socket.id, { EX: 60*10 });
+            socket.emit("connected", { socketid: socket.id });
 
-            console.log(`User ${userId} connected with socket ID: ${socket.id}`);
+            console.log(`User ${userid} connected with socket id: ${socket.id}`);
 
             socket.on("dm_message", async(data) => {
-                const {to, message} = data;
+                console.log("📨 Received dm_message event:", data);
 
-                if(!to || !message) {
-                    console.error("Invalid data received");
+                const { to, content, timeStamp } = data;
+
+                if(!to || !content) {
+                    console.error("❌ Invalid data received - missing to or content");
                     return;
                 }
-
-                console.log("data:", data);
 
                 try {
-                    await User.findByIdAndUpdate(userId, {
-                        lastSeen: Date.now(),
+                    // Update sender's last seen
+                    await User.findByIdAndUpdate(userid, {
+                        lastSeen: new Date(),
                     });
+
+                    // Find receiver by username
+                    const receiver = await User.findOne({ username: to });
+                    if(!receiver) {
+                        console.error("❌ Receiver not found:", to);
+                        return;
+                    }
+
+                    const receiverid = receiver.id.toString();
+
+                    // Create message data for database
+                    const messageData = {
+                        content: content,
+                        from: userid,
+                        to: receiverid,
+                        timeStamp: timeStamp ? new Date(timeStamp) : new Date(),
+                    };
+
+                    console.log("💾 Creating message in database:", messageData);
+
+                    // Save message to database
+                    const newMessage = await MessageModel.create(messageData);
+                    console.log("✅ Message saved to database:", newMessage._id);
+
+                    // Get receiver's socket id
+                    const receiverSocketid = await pub.get(socketKey(receiverid));
+                    
+                    // Get sender info for the recipient
+                    const sender = await User.findById(userid);
+                    if(!sender) {
+                        console.error("❌ Sender not found");
+                        return;
+                    }
+
+                    // Prepare data to send to receiver
+                    const socketData = {
+                        from: userid,
+                        to: receiverid,
+                        senderName: sender.username,
+                        senderAvatar: sender.avatar,
+                        message: {
+                            id: newMessage.id.toString(),
+                            content: newMessage.content,
+                            from: newMessage.from,
+                            to: newMessage.to,
+                            timeStamp: newMessage.timeStamp,
+                        }
+                    };
+
+                    console.log("📤 Prepared socket data:", socketData);
+
+                    // Send to receiver if online
+                    if(receiverSocketid) {
+                        this._io.to(receiverSocketid).emit("dm_message", socketData);
+                        console.log(`✅ Message sent to receiver ${to} with socket id: ${receiverSocketid}`);
+                    } else {
+                        console.log(`⚠️ User ${to} not online - message stored for later`);
+                    }
+
                 } catch(error) {
-                    console.error("Error updating user status", error);
-                    return;
+                    console.error("❌ Error processing dm_message:", error);
                 }
-
-                const enrichData: {
-                    content: string;
-                    from: string;
-                    to: string;
-                    timeStamp: Date;
-                } = {
-                    content: message,
-                    from: userId,
-                    to,
-                    timeStamp: new Date(),
-                };
-
-                console.log("Enriched data:", enrichData);
-
-                await pub.publish("Ping", JSON.stringify(enrichData));
             });
 
             socket.on("heartbeat", async() => {
                 try {
-                    await User.findByIdAndUpdate(userId, {
+                    await User.findByIdAndUpdate(userid, {
                         lastSeen: new Date(),
                     });
                 } catch(error) {
-                    console.error("Error updating user status", error);
-                    return;
+                    console.error("Error updating user status during heartbeat", error);
                 }
             });
 
             socket.on("disconnect", async() => {
-                console.log(`User ${userId} disconnected with socket ID: ${socket.id}`);
+                console.log(`User ${userid} disconnected with socket id: ${socket.id}`);
                 
                 try {
-                    await User.findByIdAndUpdate(userId, {
+                    await User.findByIdAndUpdate(userid, {
                         lastSeen: new Date(),
                         status: "OFFLINE",
                     });
-                    await this.broadcastUserStatusChange(userId.toString(), false);
+                    await this.broadcastUserStatusChange(userid.toString(), "OFFLINE");
                 } catch(error) {
-                    console.error("Error updating user status", error);
-                    return;
+                    console.error("Error updating user status on disconnect", error);
                 }
 
-                pub.del(socketKey(userId));
+                await pub.del(socketKey(userid));
             });
-        });
-
-        sub.on("message", async(channel, message) => {
-            if(channel=="Ping"){
-                const data = JSON.parse(message);
-
-                const { from, to, content, timeStamp } = data;
-
-                console.log(data);
-
-                if(!to || !from || !content) {
-                    console.error("Invalid data received");
-                    return;
-                }
-
-                const receiver = await User.findOne({ email: to });
-
-                if(!receiver) {
-                    console.error("Receiver not found");
-                    return;
-                }
-
-                const rID = receiver._id?.toString();
-
-                if(!rID) {
-                    console.error("Receiver ID not found");
-                    return;
-                }
-
-                const messageData: {
-                    content: string;
-                    from: string;
-                    to: string;
-                    timeStamp: Date;
-                } = {
-                    content,
-                    from,
-                    to,
-                    timeStamp,
-                };
-
-                const newMsg = await MessageModel.create(messageData);
-
-                console.log(`New message created: ${newMsg} from ${from} to ${to}`);
-
-                const toSocketId = await pub.get(socketKey(rID));
-
-                const sender = await User.findById({ from });
-
-                if(!sender) {
-                    console.error("Sender not found");
-                    return;
-                }
-
-                const obj_data = {
-                    fromId: from,
-                    senderMail: sender.email,
-                    senderName: sender.name,
-                    toId: rID,
-                    receiverName: receiver.name,
-                    message: newMsg,
-                };
-
-                if(toSocketId) {
-                    this._io.to(toSocketId).emit("dm_message", obj_data);
-                    await newMsg.save();
-
-                    console.log(`Message sent from ${from} to ${to} with socket ID: ${toSocketId}`);
-                } else {
-                    console.warn(`User ${to} not connected`);
-                }
-
-                pub.on("error", (err) => {
-                    console.error("[Redis pub] Error:", err);
-                });
-
-                sub.on("error", (err) => {
-                    console.error("[Redis sub] Error:", err);
-                });
-            }
         });
     }
 
@@ -241,38 +188,32 @@ export class SocketService {
         return this._io;
     }
 
-    private async broadcastUserStatusChange(userId: string, status: boolean): Promise<void> {
+    private async broadcastUserStatusChange(userid: string, status: string): Promise<void> {
         try {
-            const user = await User.findById(userId).populate(
-                "friends",
-                "username avatar"
-            )
+            const user = await User.findById(userid).populate("friends", "username avatar");
             if(!user) return;
 
-            const allUserstoNotify = [
-                ...user.friends.map((friend) => friend._id.toString()),
-            ];
+            const friendids = user.friends.map((friend) => friend._id.toString());
+            const uniqueFriendids = [...new Set(friendids)];
 
-            const uniqueUserstoNotify = [...new Set(allUserstoNotify)];
+            console.log(`📡 Broadcasting status change for user ${userid}, status ${status} to friends: ${uniqueFriendids}`);
 
-            console.log(`📡 Broadcasting status change for user ${userId}, status ${status} to user frineds: ${uniqueUserstoNotify}`);
-
-            for(const frinedId of uniqueUserstoNotify) {
-                const friendSocketId = await pub.get(socketKey(frinedId));
-                if(friendSocketId) {
-                    this._io.to(friendSocketId).emit("user_status_change", {
-                        userId,
-                        status,
+            for(const friendid of uniqueFriendids) {
+                const friendSocketid = await pub.get(socketKey(friendid));
+                if(friendSocketid) {
+                    this._io.to(friendSocketid).emit("user_status_change", {
+                        userid,
+                        status: status,
                         lastSeen: new Date(),
                     });
 
-                    console.log(`Sent status update to friend ${frinedId} with socket ID: ${friendSocketId}`);
+                    console.log(`✅ Sent status update to friend ${friendid} with socket id: ${friendSocketid}`);
                 } else {
-                    console.log(`User ${frinedId} not online`);
+                    console.log(`⚠️ Friend ${friendid} not online`);
                 }
             }
         } catch(error) {
-            console.error("Error broadcasting user status change", error);
+            console.error("❌ Error broadcasting user status change", error);
         }   
     }   
 }

@@ -16,34 +16,54 @@ declare global {
 
 export const getChats = async (req: Request, res: Response): Promise<any> => {
   try {
-    // Authenticated user (from JWT middleware)
-    const currentUserId = req.user?.id; 
-    // The other user's ID or username
-    const otherUserId =
-      req.params.userId || req.query.userId || req.body.userId;
+    const currentUserid = req.user?.id; 
+    const otherUserid = req.params.userid || req.query.userid || req.body.userid;
+    
+    // Pagination parameters
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const skip = (page - 1) * limit;
 
-    if (!currentUserId || !otherUserId) {
-      return res.status(400).json({ error: "Missing userId(s)" });
+    if (!currentUserid || !otherUserid) {
+      return res.status(400).json({ error: "Missing userid(s)" });
     }
 
-    // If otherUserId is a username, resolve to userId
-    let otherUserObjId = otherUserId;
-    if (otherUserId.length < 24) {
-      // crude check for ObjectId
-      const user = await User.findOne({ username: otherUserId });
+    let otherUserObjid = otherUserid;
+    if (otherUserid.length < 24) {
+      const user = await User.findOne({ username: otherUserid });
       if (!user) return res.status(404).json({ error: "User not found" });
-      otherUserObjId = user._id;
+      otherUserObjid = user._id;
     }
 
-    // Find all messages between the two users
+    // Get total count for pagination info
+    const totalMessages = await MessageModel.countDocuments({
+      $or: [
+        { from: currentUserid, to: otherUserObjid },
+        { from: otherUserObjid, to: currentUserid },
+      ],
+    });
+
+    // Find messages with pagination
     const messages = await MessageModel.find({
       $or: [
-        { from: currentUserId, to: otherUserObjId },
-        { from: otherUserObjId, to: currentUserId },
+        { from: currentUserid, to: otherUserObjid },
+        { from: otherUserObjid, to: currentUserid },
       ],
-    }).sort({ timestamp: 1 });
+    })
+    .sort({ timeStamp: -1 }) // Most recent first
+    .skip(skip)
+    .limit(limit)
+    .sort({ timeStamp: 1 }); // Then reverse for chronological order
 
-    return res.json({ messages });
+    return res.json({ 
+      messages,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalMessages / limit),
+        totalMessages,
+        hasMore: skip + messages.length < totalMessages
+      }
+    });
   } catch (error) {
     console.error("Error fetching chat messages:", error);
     return res.status(500).json({ error: "Internal server error" });

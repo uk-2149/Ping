@@ -8,8 +8,8 @@ export const getUser = async(req: Request, res: Response): Promise<any> => {
 
     try {
         const token = req.cookies.token;
-        const userId = verifyJWT(token, "access") as string;
-        const user = await User.findById(userId);
+        const userid = verifyJWT(token, "access") as string;
+        const user = await User.findById(userid);
         if(!user) {
             return res.status(400).json({ message: "User not found" });
         }
@@ -24,8 +24,8 @@ export const setUsername = async(req: Request, res: Response): Promise<any> => {
     const { username } = req.body;
     try {
         const token = req.cookies.token;
-        const userId = verifyJWT(token, "access") as string;
-        const user = await User.findById(userId);
+        const userid = verifyJWT(token, "access") as string;
+        const user = await User.findById(userid);
         if(!user) {
             return res.status(400).json({ message: "User not found" });
         }
@@ -51,8 +51,8 @@ export const FriendReq = async(req: Request, res: Response): Promise<any> => {
     try {
 
         const token = req.cookies.token;
-        const userId = verifyJWT(token, "access") as string;
-        const user = await User.findById(userId);
+        const userid = verifyJWT(token, "access") as string;
+        const user = await User.findById(userid);
 
         if(!user) {
             return res.status(400).json({ message: "User not found" });
@@ -67,22 +67,22 @@ export const FriendReq = async(req: Request, res: Response): Promise<any> => {
             return res.status(400).json({ message: "User not found" });
         }
 
-        const senderId = user._id as string;
-        const receiverId = receiver._id as string;
+        const senderid = user._id as string;
+        const receiverid = receiver._id as string;
 
-        // Ensure receiverId is an ObjectId
-        const receiverObjectId = new mongoose.Types.ObjectId(receiverId);
+        // Ensure receiverid is an Objectid
+        const receiverObjectid = new mongoose.Types.ObjectId(receiverid);
 
         // Check if they are already friends
-        const sender = await User.findById(receiverObjectId);
-        if (sender?.friends.includes(receiverObjectId)) {
+        const sender = await User.findById(receiverObjectid);
+        if (sender?.friends.includes(receiverObjectid)) {
             return res.status(400).json({ message: "User is already your friend" });
         }
 
         // Check if request already exists
         const existingRequest = await FriendRequest.findOne({
-            sender: senderId,
-            receiver: receiverId
+            sender: senderid,
+            receiver: receiverid
         });
 
         if (existingRequest) {
@@ -90,8 +90,8 @@ export const FriendReq = async(req: Request, res: Response): Promise<any> => {
         }
 
         const friendRequest = await FriendRequest.create({
-            sender: senderId,
-            receiver: receiverId
+            sender: senderid,
+            receiver: receiverid
         })
 
         friendRequest.save();
@@ -104,13 +104,13 @@ export const FriendReq = async(req: Request, res: Response): Promise<any> => {
 } 
 
 export const FriendReqAccept = async (req: Request, res: Response): Promise<any> => {
-  const { requestId } = req.body;
-  const request = await FriendRequest.findById(requestId);
+  const { requestid } = req.body;
+  const request = await FriendRequest.findById(requestid);
   if (!request) {
     return res.status(404).json({ message: "Friend request not found" });
   }
-  const senderId = request.sender;
-  const receiverId = request.receiver;
+  const senderid = request.sender;
+  const receiverid = request.receiver;
   const session = await mongoose.startSession();
 
   try {
@@ -118,19 +118,19 @@ export const FriendReqAccept = async (req: Request, res: Response): Promise<any>
 
     // Add each other as friends (without duplicates)
     await User.findByIdAndUpdate(
-      senderId,
-      { $addToSet: { friends: receiverId } },
+      senderid,
+      { $addToSet: { friends: receiverid } },
       { session }
     );
     await User.findByIdAndUpdate(
-      receiverId,
-      { $addToSet: { friends: senderId } },
+      receiverid,
+      { $addToSet: { friends: senderid } },
       { session }
     );
 
     // Delete the friend request
     await FriendRequest.findOneAndDelete(
-      { sender: senderId, receiver: receiverId },
+      { sender: senderid, receiver: receiverid },
       { session }
     );
 
@@ -147,15 +147,15 @@ export const FriendReqAccept = async (req: Request, res: Response): Promise<any>
 };
 
 export const DeleteFriendRequest = async (req: Request, res: Response): Promise<any> => {
-    const { requestId } = req.body;
-    const request = await FriendRequest.findById(requestId);
+    const { requestid } = req.body;
+    const request = await FriendRequest.findById(requestid);
     if (!request) {
         return res.status(404).json({ message: "Friend request not found" });
     }
-    const senderId = request.sender;
-    const receiverId = request.receiver;
+    const senderid = request.sender;
+    const receiverid = request.receiver;
     try {
-        await FriendRequest.findOneAndDelete({ sender: senderId, receiver: receiverId });
+        await FriendRequest.findOneAndDelete({ sender: senderid, receiver: receiverid });
         return res.status(200).json({ message: "Friend request deleted successfully" });
     } catch (err: any) {
         console.error(err);
@@ -164,21 +164,21 @@ export const DeleteFriendRequest = async (req: Request, res: Response): Promise<
 }
 
 export const DeleteFriend = async (req: Request, res: Response): Promise<any> => {
-    const { userId, friendId } = req.body;
+    const { userid, friendid } = req.body;
     const session = await mongoose.startSession();
 
     try {
         session.startTransaction();
 
         await User.findByIdAndUpdate(
-            userId, 
-            { $pull: { friends: friendId } 
-        });
+            userid, 
+            { $pull: { friends: friendid } }
+        );
 
         await User.findByIdAndUpdate(
-            friendId, 
-            { $pull: { friends: userId } 
-        });
+            friendid, 
+            { $pull: { friends: userid } }
+        );
 
         await session.commitTransaction();
         session.endSession();
@@ -193,12 +193,12 @@ export const DeleteFriend = async (req: Request, res: Response): Promise<any> =>
 export const getFriendRequests = async(req: Request, res: Response): Promise<any> => {
     try {
         const token = req.cookies.token;
-        const userId = verifyJWT(token, "access") as string;
-        const user = await User.findById(userId);
+        const userid = verifyJWT(token, "access") as string;
+        const user = await User.findById(userid);
         if(!user) {
             return res.status(400).json({ message: "User not found" });
         }
-        const friendRequests = await FriendRequest.find({ sender: userId })
+        const friendRequests = await FriendRequest.find({ sender: userid })
             .populate("sender", "username avatar") // only bring username
             .populate("receiver", "username avatar"); 
         return res.status(200).json(friendRequests);
@@ -211,12 +211,12 @@ export const getFriendRequests = async(req: Request, res: Response): Promise<any
 export const getReceivedRequests = async(req: Request, res: Response): Promise<any> => {
     try {
         const token = req.cookies.token;
-        const userId = verifyJWT(token, "access") as string;
-        const user = await User.findById(userId);
+        const userid = verifyJWT(token, "access") as string;
+        const user = await User.findById(userid);
         if(!user) {
             return res.status(400).json({ message: "User not found" });
         }
-        const friendRequests = await FriendRequest.find({ receiver: userId })
+        const friendRequests = await FriendRequest.find({ receiver: userid })
             .populate("sender", "username avatar") // only bring username
             .populate("receiver", "username avatar"); 
         return res.status(200).json(friendRequests);
@@ -229,8 +229,8 @@ export const getReceivedRequests = async(req: Request, res: Response): Promise<a
 export const getFriendsList = async(req: Request, res: Response): Promise<any> => {
     try {
         const token = req.cookies.token;
-        const userId = verifyJWT(token, "access") as string;
-        const user = await User.findById(userId);
+        const userid = verifyJWT(token, "access") as string;
+        const user = await User.findById(userid);
         if(!user) {
             return res.status(400).json({ message: "User not found" });
         }
@@ -243,18 +243,18 @@ export const getFriendsList = async(req: Request, res: Response): Promise<any> =
 }
 
 export const addDmFriend = async(req: Request, res: Response): Promise<any> => {
-    const { friendId } = req.body;
+    const { friendid } = req.body;
     try {
         const token = req.cookies.token;
-        const userId = verifyJWT(token, "access") as string;
-        const user = await User.findById(userId);
+        const userid = verifyJWT(token, "access") as string;
+        const user = await User.findById(userid);
         if(!user) {
             return res.status(400).json({ message: "User not found" });
         }
-        if(user.dmFriends.includes(friendId)) {
+        if(user.dmFriends.includes(friendid)) {
             return res.status(400).json({ message: "User is already on your DM List" });
         }
-        user.dmFriends.push(friendId);
+        user.dmFriends.push(friendid);
         await user.save();
         return res.status(200).json({ message: "DM added successfully" });
     } catch (error) {
@@ -266,8 +266,8 @@ export const addDmFriend = async(req: Request, res: Response): Promise<any> => {
 export const getDmFriendsList = async(req: Request, res: Response): Promise<any> => {
     try {
         const token = req.cookies.token;
-        const userId = verifyJWT(token, "access") as string;
-        const user = await User.findById(userId);
+        const userid = verifyJWT(token, "access") as string;
+        const user = await User.findById(userid);
         if(!user) {
             return res.status(400).json({ message: "User not found" });
         }

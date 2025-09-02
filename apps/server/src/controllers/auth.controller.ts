@@ -53,10 +53,10 @@ export const SignIn = async(req: Request, res: Response): Promise<any> => {
             return res.status(400).json({ message: "Invalid password" });
         }
 
-        const userId = user._id as string;
+        const userid = user._id as string;
 
-        const token = generateToken(userId, "access");
-        const ref_token = generateToken(userId, "refresh");
+        const token = generateToken(userid, "access");
+        const ref_token = generateToken(userid, "refresh");
 
         // refresh token
         res.cookie("ref_token", ref_token, {
@@ -101,14 +101,14 @@ export const onRefreshToken = async (
     return res.status(401).json({ error: "Refresh token is required." });
   }
   try {
-    const userId = verifyJWT(ref_token, "refresh") as string;
-    const user = await User.findById(userId);
+    const userid = verifyJWT(ref_token, "refresh") as string;
+    const user = await User.findById(userid);
     if (!user) {
       return res.status(404).json({ error: "User not found." });
     }
 
     // Generate new access token
-    const newAccessToken = generateToken(userId, "access");
+    const newAccessToken = generateToken(userid, "access");
 
     res.cookie("token", newAccessToken, {
       httpOnly: true,

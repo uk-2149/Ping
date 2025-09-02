@@ -33,7 +33,7 @@ const userSchema = new Schema<IUser>(
     messages: [{ type: mongoose.Schema.Types.ObjectId, ref: "Message" }],
     friends: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], 
     dmFriends: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], 
-    // dmChannels: [{ type: mongoose.Schema.Types.ObjectId, ref: "DirectMessage" }],
+    // dmChannels: [{ type: mongoose.Schema.Types.Objectid, ref: "DirectMessage" }],
   },
   { timestamps: true }
 );

@@ -2,33 +2,25 @@ import React, { createContext, useContext, useReducer, useEffect, useRef, useCal
 import { io, Socket } from "socket.io-client";
 import api from "../lib/api";
 import { useAuth } from "./AuthContext";
-
-interface User {
-  id: string;
-  username: string;
-  avatar?: string;
-  status: "ONLINE" | "OFFLINE" | "AWAY" | "DO_NOT_DISTURB";
-  lastSeen?: Date;
-}
+import type { User } from "../types";
 
 interface Message {
   id: string;
   from: string;
   to: string;
   content: string;
-  timestamp: Date;
+  timeStamp: Date;
 }
 
 interface Chat {
   id: string;
-  participants: User[];
+  participants: any[];
   messages: Message[];
   lastMessage?: Message;
   unreadCount: number;
 }
 
 interface ChatState {
-    chats: Chat[];
     activeChat: Chat | null;
     friends: User[];
     dmFriends: any[];
@@ -40,14 +32,53 @@ interface ChatState {
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
+const messageReducerCases = {
+    'SEND_MESSAGE': (state: ChatState, message: Message) => {
+        if (!state.activeChat) return state;
+        
+        // Only update activeChat if the message is for the current active chat
+        const isForActiveChat = state.activeChat.id === message.to;
+        
+        if (isForActiveChat) {
+            return {
+                ...state,
+                activeChat: {
+                    ...state.activeChat,
+                    messages: [...state.activeChat.messages, message],
+                    lastMessage: message,
+                }
+            };
+        }
+        
+        return state;
+    },
+
+    'RECEIVE_MESSAGE': (state: ChatState, message: Message) => {
+        // If we have an active chat and the message is from the active chat participant
+        if (state.activeChat && state.activeChat.id === message.from) {
+            return {
+                ...state,
+                activeChat: {
+                    ...state.activeChat,
+                    messages: [...state.activeChat.messages, message],
+                    lastMessage: message,
+                    unreadCount: 0, // Mark as read since it's the active chat
+                }
+            };
+        }
+        
+        // If message is not for active chat, we can handle notifications here if needed
+        console.log("📨 Message received but not for active chat:", message);
+        return state;
+    }
+};
+
 type ChatAction  = 
     | { type: 'SET_USERNAME_STATUS'; payload: string }
     | {
       type: "UPDATE_USER_STATUS";
-      payload: { userId: string; status: "ONLINE" | "OFFLINE" | "AWAY" | "DO_NOT_DISTURB"; lastSeen: Date };
+      payload: { userid: string; status: "ONLINE" | "OFFLINE" | "AWAY" | "DO_NOT_DISTURB"; lastSeen: Date };
     }
-    | { type: 'SET_CHATS'; payload: Chat[] }
-    | { type: "ADD_NEW_CHAT"; payload: Chat }
     | { type: 'SET_ACTIVE_CHAT'; payload: Chat | null }
     | { type: 'SET_FRIENDS'; payload: User[] }
     | { type: 'SET_DM_FRIENDS'; payload: User[] }
@@ -58,7 +89,8 @@ type ChatAction  =
     | { type: 'RECEIVE_MESSAGE'; payload: Message }
     | { type: 'ADD_FRIEND'; payload: User }
     | { type: 'ADD_DM_FRIEND'; payload: User }
-    | { type: 'CREATE_DM_CHAT'; payload: { currentUser: User, friend: User } };
+    | { type: 'CREATE_DM_CHAT'; payload: { currentUser: User, friend: User } }
+    | { type: 'LOAD_CHAT_MESSAGES'; payload: { messages: Message[] } };
 
 const ChatReducer = (state: ChatState, action: ChatAction): ChatState => {
     switch (action.type) {
@@ -66,31 +98,21 @@ const ChatReducer = (state: ChatState, action: ChatAction): ChatState => {
             return { ...state, usernameSet: action.payload };
 
         case "UPDATE_USER_STATUS": {
-            const { userId, status, lastSeen } = action.payload;
+            const { userid, status, lastSeen } = action.payload;
             console.log("🔄 Updating user status in reducer:", {
-                userId,
+                userid,
                 status,
                 lastSeen,
             });
 
-            // Update user status in chats
-            const updatedChats = state.chats.map((chat) => ({
-                ...chat,
-                participants: chat.participants.map((participant) =>
-                participant.id === userId
-                    ? { ...participant, status, lastSeen }
-                    : participant
-                ),
-            }));
-
             // Update user status in friends
             const updatedFriends = state.friends.map((friend) =>
-                friend.id === userId ? { ...friend, status, lastSeen } : friend
+                friend._id === userid ? { ...friend, status, lastSeen } : friend
             );
 
             // Update user status in dmFriends
             const updatedDmFriends = state.dmFriends.map((friend) =>
-                friend.id === userId ? { ...friend, status, lastSeen } : friend
+                friend.id === userid ? { ...friend, status, lastSeen } : friend
             );
 
             // Update active chat if it contains this user
@@ -98,28 +120,20 @@ const ChatReducer = (state: ChatState, action: ChatAction): ChatState => {
                 ? {
                     ...state.activeChat,
                     participants: state.activeChat.participants.map((participant) =>
-                    participant.id === userId
+                    participant.id === userid
                         ? { ...participant, status, lastSeen }
                         : participant
                     ),
                 }
                 : null;
 
-            console.log("🔄 Updated chats, friends, dmFriends, and activeChat");
             return {
                 ...state,
-                chats: updatedChats,
                 friends: updatedFriends,
                 dmFriends: updatedDmFriends,
                 activeChat: updatedActiveChat,
             };
         }
-
-        case 'SET_CHATS':
-            return { ...state, chats: action.payload };
-
-        case 'ADD_NEW_CHAT':
-            return { ...state, chats: [...state.chats, action.payload] };
 
         case 'SET_ACTIVE_CHAT':
             return { ...state, activeChat: action.payload };
@@ -143,70 +157,24 @@ const ChatReducer = (state: ChatState, action: ChatAction): ChatState => {
             return { ...state, showDmWindow: action.payload };
 
         case 'SEND_MESSAGE':
-        case 'RECEIVE_MESSAGE': {
-            const message = action.payload;
+            return messageReducerCases.SEND_MESSAGE(state, action.payload);
             
-            // Find the relevant chat by ID
-            const chatIndex = state.chats.findIndex(chat => chat.id === message.to || chat.id === message.from);
-            
-            if (chatIndex !== -1) {
-                const updatedChats = [...state.chats];
-                const updatedChat = {
-                    ...updatedChats[chatIndex],
-                    messages: [...updatedChats[chatIndex].messages, message],
-                    lastMessage: message,
-                    unreadCount: action.type === 'RECEIVE_MESSAGE' && 
-                                state.activeChat?.id !== updatedChats[chatIndex].id
-                        ? updatedChats[chatIndex].unreadCount + 1
-                        : updatedChats[chatIndex].unreadCount,
-                };
-                
-                updatedChats[chatIndex] = updatedChat;
-                
-                // Update active chat if it's the same one
-                const updatedActiveChat = state.activeChat?.id === updatedChat.id
-                    ? updatedChat
-                    : state.activeChat;
-                
-                return {
-                    ...state,
-                    chats: updatedChats,
-                    activeChat: updatedActiveChat
-                };
-            }
-            
-            return state;
-        }
+        case 'RECEIVE_MESSAGE':
+            return messageReducerCases.RECEIVE_MESSAGE(state, action.payload);
 
         case 'CREATE_DM_CHAT': {
             const { currentUser, friend } = action.payload;
             
-            // Check if chat already exists
-            const existingChat = state.chats.find(chat => 
-                chat.participants.some(p => p.id === friend.id) &&
-                chat.participants.some(p => p.id === currentUser.id)
-            );
-            
-            if (existingChat) {
-                return {
-                    ...state,
-                    activeChat: existingChat,
-                    showDmWindow: true,
-                    showFriends: false
-                };
-            }
-            
-            // Create new chat with friend's ID as chat ID
+            // Create new chat with friend's id as chat id
             const newChat: Chat = {
-                id: friend.id,
+                id: friend._id,
                 participants: [currentUser, friend],
-                messages: [],
+                messages: [], // Start with empty messages - will be loaded separately
                 unreadCount: 0,
             };
             
             return {
                 ...state,
-                chats: [...state.chats, newChat],
                 activeChat: newChat,
                 showDmWindow: true,
                 showFriends: false
@@ -221,6 +189,20 @@ const ChatReducer = (state: ChatState, action: ChatAction): ChatState => {
             
         case 'SET_ACTIVE_SERVER':
             return { ...state, activeServer: action.payload };
+
+        case 'LOAD_CHAT_MESSAGES':
+            if (!state.activeChat) return state;
+            
+            return {
+                ...state,
+                activeChat: {
+                    ...state.activeChat,
+                    messages: action.payload.messages,
+                    lastMessage: action.payload.messages.length > 0 
+                        ? action.payload.messages[action.payload.messages.length - 1] 
+                        : undefined
+                }
+            };
             
         default:
             return state;
@@ -229,7 +211,6 @@ const ChatReducer = (state: ChatState, action: ChatAction): ChatState => {
 
 const initialState: ChatState = {
     usernameSet: "not set",
-    chats: [],
     activeChat: null,
     friends: [],
     dmFriends: [],
@@ -246,12 +227,12 @@ interface ChatContextType extends ChatState {
     // Chat actions
     openDmWindow: (currentUser: User, friend: User) => void;
     closeDmWindow: () => void;
-    setActiveChat: (chat: Chat | null) => void;
+    setActiveChat: (friend: User) => Promise<void>; // Changed: now takes friend and loads messages
     sendMessage: (content: string) => void;
 
     // UI actions
     setShowFriends: (show: boolean) => void;
-    setActiveServer: (serverId: number | null) => void;
+    setActiveServer: (serverid: number | null) => void;
 
     loadDmFriends: () => Promise<void>; 
 }
@@ -283,68 +264,43 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
         if(!currentUser) return;
 
-        const senderId = data.from;
+        console.log("📨 Received message data:", data);
+
+        const senderid = data.from;
         const msgData = data.message;
 
-        console.log("Incoming message:", msgData); 
+        if (!msgData || !senderid) {
+            console.error("❌ Invalid message data received");
+            return;
+        }
 
-        const timestamp = msgData.timestamp 
-            ? new Date(msgData.timestamp) 
+        const timestamp = msgData.timeStamp 
+            ? new Date(msgData.timeStamp) 
             : new Date();
         const isValidTimestamp = !isNaN(timestamp.getTime());
 
-        const receiverId = data.to || msgData.to || currentUser.id;
-
         const msg: Message = {
             id: msgData.id,
-            from: senderId,
-            to: receiverId,
-            content: msgData.content || msgData,
-            timestamp: isValidTimestamp ? timestamp : new Date(),
+            from: senderid,
+            to: msgData.to || currentUser._id,
+            content: msgData.content,
+            timeStamp: isValidTimestamp ? timestamp : new Date(),
         };
 
-        // Use sender ID as chat ID for consistency
-        const chatId = senderId === currentUser.id ? receiverId : senderId;
+        console.log("📝 Processed message:", msg);
 
-        console.log("Current Chats:", currentState.chats.map((c) => c.id));
-        console.log("Incoming message:", msg);
-        console.log("Chat ID:", chatId);
-
-        const existingChat = currentState.chats.find(
-            (chat) => chat.id === chatId
-        );
-
-        if(!existingChat) {
-            // Create a new chat
-            const newChat: Chat = {
-                id: chatId,
-                participants: [
-                    { 
-                        id: currentUser.id, 
-                        username: currentUser.username, 
-                        status: "OFFLINE", 
-                        avatar: currentUser.avatar 
-                    },
-                    { 
-                        id: chatId, 
-                        username: data.senderName, 
-                        status: "OFFLINE", 
-                        avatar: data.senderAvatar 
-                    }
-                ],
-                messages: [msg],
-                lastMessage: msg,
-                unreadCount: 1,
-            };
-            dispatch({ type: "ADD_NEW_CHAT", payload: newChat });
-        } else {
+        // Only add to activeChat if it's the current conversation
+        if (currentState.activeChat && currentState.activeChat.id === senderid) {
             dispatch({ type: "RECEIVE_MESSAGE", payload: msg });
+        } else {
+            // You can handle notifications for non-active chats here
+            console.log("📨 Message from non-active chat, could show notification");
         }
     }, []);
 
     // Handle User Status change
     const handleUserStatusChange = useCallback(
-        (data: { userId: string; status: "ONLINE" | "OFFLINE" | "AWAY" | "DO_NOT_DISTURB", lastSeen: Date }) => {
+        (data: { userid: string; status: "ONLINE" | "OFFLINE" | "AWAY" | "DO_NOT_DISTURB", lastSeen: Date }) => {
             console.log("Received User Status change data:", data);
             dispatch({ type: "UPDATE_USER_STATUS", payload: {
                 ...data,
@@ -460,28 +416,31 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         handleUserStatusChange,
     ]);
 
-    // Load DM friends on render
+    // Simplified loadDmFriends - just loads the list, no messages
     const loadDmFriends = useCallback(async () => {
         if (!user) return;
         
         try {
-            const res = await api.get('/api/users/getDm');
-            const dmFriendsData = res.data || [];
+            // Get manually added DM friends
+            const dmRes = await api.get('/api/users/getDm');
+            const dmFriendsData = dmRes.data || [];
             
-            dispatch({ type: 'SET_DM_FRIENDS', payload: dmFriendsData });
+            // Get users who have sent messages to current user
+            const messagesRes = await api.get(`/api/users/getMessageSenders/${user._id}`);
+            const messageSenders = messagesRes.data || [];
             
-            // Create chats for existing dmFriends
-            const chatsFromDmFriends: Chat[] = dmFriendsData.map((friend: User) => ({
-                id: friend.id, // friend ID as chat ID
-                participants: [user, friend],
-                messages: [],
-                unreadCount: 0,
-            }));
+            // Combine both lists and remove duplicates
+            const allDmUsers = [...dmFriendsData];
+            messageSenders.forEach((sender: any) => {
+                const exists = dmFriendsData.find((friend: any) => friend._id === sender._id);
+                if (!exists) {
+                    allDmUsers.push(sender);
+                }
+            });
             
-            dispatch({ type: 'SET_CHATS', payload: chatsFromDmFriends });
+            dispatch({ type: 'SET_DM_FRIENDS', payload: allDmUsers });
             
-            console.log('Loaded dmFriends:', dmFriendsData);
-            console.log('Created chats from dmFriends:', chatsFromDmFriends);
+            console.log('Loaded DM friends:', allDmUsers);
         } catch (error) {
             console.error('Failed to load dmFriends:', error);
         }
@@ -513,38 +472,54 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         }
     }, [isAuthenticated, user, checkUsername, loadDmFriends]);
 
-    const setActiveChat = useCallback(async (chat: Chat | null) => {
-        if(!chat) {
+    // Updated setActiveChat - takes friend and loads their messages
+    const setActiveChat = useCallback(async (friend: User) => {
+        if (!user || !friend) {
             dispatch({ type: 'SET_ACTIVE_CHAT', payload: null});
             return;
         }
 
+        console.log(`🎯 Setting active chat with ${friend.username} (ID: ${friend._id})`);
+
+        // Create the chat structure first
+        const newChat: Chat = {
+            id: friend._id,
+            participants: [user, friend],
+            messages: [], // Will be loaded below
+            unreadCount: 0,
+        };
+
+        // Set as active chat
+        dispatch({ type: 'SET_ACTIVE_CHAT', payload: newChat });
+
+        // Load messages for this chat
         try {
-            const res = await api.get(`api/chats/${chat.id}/messages`);
+            const res = await api.get(`/api/chats/${friend._id}/messages`);
+            const messages = res.data.messages || [];
+            
+            console.log(`📥 Loaded ${messages.length} messages for ${friend.username}`);
+            
+            // Update activeChat with the loaded messages
+            dispatch({ 
+                type: 'LOAD_CHAT_MESSAGES', 
+                payload: { messages } 
+            });
 
-            // Map backend messages to frontend Message type
-            const mappedMessages = res.data.messages.map((msg: any) => ({
-                id: msg._id,
-                from: msg.from,
-                to: msg.to,
-                content: msg.content,
-                timestamp: new Date(msg.timestamp),
-            }));
+            dispatch({
+                type: 'SET_SHOW_DM_WINDOW',
+                payload: true
+            })
 
-            // Update the chat's messages in state and set activeChat to the updated chat object
-            const updatedChats = stateRef.current.chats.map((c) =>
-                c.id === chat.id ? { ...c, messages: mappedMessages } : c
-            );
-
-            const updatedActiveChat = updatedChats.find((c) => c.id === chat.id);
-
-            dispatch({ type: "SET_CHATS", payload: updatedChats });
-            dispatch({ type: "SET_ACTIVE_CHAT", payload: updatedActiveChat ?? null });
+            dispatch({
+                type: 'SET_SHOW_FRIENDS',
+                payload: false
+            })
+            
         } catch (error) {
-            console.error("Failed to fetch chat history:", error);
-            dispatch({ type: "SET_ACTIVE_CHAT", payload: chat }); // fallback
+            console.error("Failed to load chat messages:", error);
+            // Chat is still set, just without message history
         }
-    }, []);
+    }, [user]);
 
     // Send message
     const sendMessage = useCallback(
@@ -558,7 +533,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
                 !socketRef.current ||
                 !isConnected
             ) {
-                console.warn("Cannot send message: no active chat or user", {
+                console.warn("❌ Cannot send message:", {
                     hasActiveChat: !!currentState.activeChat,
                     hasUser: !!currentUser,
                     hasSocket: !!socketRef.current,
@@ -567,37 +542,43 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
                 return;
             }
 
+            const otherUser = currentState.activeChat.participants.find(
+                (p) => p._id !== currentUser._id
+            );
+
+            console.log(currentUser);
+
+            console.log(otherUser);
+
+            if(!otherUser) {
+                console.warn("❌ Cannot send message: no other user found");
+                return;
+            }
+
             const message: Message = {
                 id: Date.now().toString(),
-                from: currentUser.id,
-                to: currentState.activeChat.id,
+                from: currentUser._id,
+                to: otherUser?._id,
                 content,
-                timestamp: new Date(),
+                timeStamp: new Date(),
             };
 
+            // Optimistically add message to UI
             dispatch({ type: "SEND_MESSAGE", payload: message });
 
-            const receiverUsername = currentState.activeChat.participants.find(
-                (p) => p.id !== currentUser.id
-            )?.username;
+            const socketData = {
+                to: otherUser.username, // Send username to backend
+                content: content,
+                timeStamp: message.timeStamp.toISOString(),
+            };
 
-            if(receiverUsername) {
-                console.log("Sending message to", receiverUsername);
-                socketRef.current.emit("dm_message", {
-                    from: currentUser.username,
-                    to: receiverUsername,
-                    content,
-                    timestamp: new Date().toISOString(),
-                    message: message
-                });
-            } else {
-                console.warn("Cannot send message, no receiver username found");
-            }
+            console.log("📤 Sending message via socket:", socketData);
+            socketRef.current.emit("dm_message", socketData);
         },
         [isConnected]
     );
 
-    // Open DM Window - Fixed logic
+    // Open DM Window - now uses setActiveChat
     const openDmWindow = useCallback(async (currentUser: User, friend: any) => {
         if (!currentUser) {
             console.error("Current user is null, cannot open DM window");
@@ -606,29 +587,26 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
         // Check if friend already exists in dmFriends
         console.log("Checking if", friend._id, "exists in dmFriends");
-        console.log(state.dmFriends)
         const existingDmFriend = state.dmFriends.find(dmFriend => dmFriend._id === friend._id);
         
-        if (existingDmFriend) {
-            // Friend exists in dmFriends, just open existing chat
-            console.log(`${friend.username} already exists in DM friends`);
-            dispatch({ type: "CREATE_DM_CHAT", payload: { currentUser, friend } });
-        } else {
+        if (!existingDmFriend) {
             // Friend doesn't exist in dmFriends, add them first
             try {
-                const res = await api.post("/api/users/addDm", { friendId: friend._id });
+                const res = await api.post("/api/users/addDm", { friendid: friend._id });
                 console.log(`Added ${friend.username} as DM friend`, res.data);
 
                 // Add friend to dmFriends in state
                 dispatch({ type: "ADD_DM_FRIEND", payload: friend });
-                
-                // Then create the chat
-                dispatch({ type: "CREATE_DM_CHAT", payload: { currentUser, friend } });
             } catch (error) {
                 console.error("Failed to add DM friend:", error);
             }
         }
-    }, [state.dmFriends]);
+
+        // Set as active chat and load messages
+        await setActiveChat(friend);
+        dispatch({ type: 'SET_SHOW_DM_WINDOW', payload: true });
+        dispatch({ type: 'SET_SHOW_FRIENDS', payload: false });
+    }, [state.dmFriends, setActiveChat]);
 
     const closeDmWindow = useCallback(() => {
         dispatch({ type: 'SET_SHOW_DM_WINDOW', payload: false });
@@ -655,8 +633,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: 'SET_SHOW_FRIENDS', payload: show });
     }, []);
 
-    const setActiveServer = useCallback((serverId: number | null) => {
-        dispatch({ type: 'SET_ACTIVE_SERVER', payload: serverId });
+    const setActiveServer = useCallback((serverid: number | null) => {
+        dispatch({ type: 'SET_ACTIVE_SERVER', payload: serverid });
     }, []);
 
     return (

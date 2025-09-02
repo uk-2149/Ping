@@ -9,7 +9,7 @@ export interface IServerMember {
 export interface IServer extends Document {
   name: string;
   icon?: string;
-  ownerId: Types.ObjectId;
+  ownerid: Types.ObjectId;
   channels: Types.ObjectId[];
   members: IServerMember[];
   roles: Types.ObjectId[];
@@ -27,7 +27,7 @@ const serverSchema = new Schema<IServer>(
   {
     name: { type: String, required: true },
     icon: { type: String },
-    ownerId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    ownerid: { type: Schema.Types.ObjectId, ref: "User", required: true },
     channels: [{ type: Schema.Types.ObjectId, ref: "Channel" }],
     members: [serverMemberSchema],
     roles: [{ type: Schema.Types.ObjectId, ref: "Role" }],

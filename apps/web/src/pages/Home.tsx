@@ -7,14 +7,13 @@ import Friends from '../components/Friends/Friends';
 import api from '../lib/api';
 import UsernameModal from '../components/Username';
 import DmChatWindow from '../components/chat/ChatWindow';
-import { useChat } from '../context/ChatContext';
+import { ChatProvider, useChat } from '../context/ChatContext';
 import { useAuth } from '../context/AuthContext';
 import { FriendsProvider } from '../context/FriendsContext';
 
 function Home() {
 
   const {
-    checkUsername,
     usernameSet,
     showFriends,
     activeServer,
@@ -29,6 +28,11 @@ function Home() {
   //   checkUsername();
   //   console.log((usernameSet === "not set"));
   // }, [usernameSet]);
+
+  useEffect(() => {
+    console.log(user);
+    console.log(showDmWindow);
+  }, [user, showDmWindow]);
 
   return (
     <div className="flex h-screen bg-gray-900 text-white">

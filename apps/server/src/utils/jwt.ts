@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 const JWT_SECRET = process.env.JWT_SECRET as string || "db88f91f79860a5251f217d5";
 const REFRESH_SECRET = process.env.REFRESH_SECRET as string || "181e6776b5714ba564e54fd9";
 
-export const generateToken = (userId: string, type: string): string => {
+export const generateToken = (userid: string, type: string): string => {
   if (type !== "access" && type !== "refresh") {
     throw new Error("Invalid token type. Use 'access' or 'refresh'.");
   }
@@ -11,7 +11,7 @@ export const generateToken = (userId: string, type: string): string => {
   if (!secret) {
     throw new Error("JWT_SECRET is not defined");
   }
-  return jwt.sign({ userId }, secret, {
+  return jwt.sign({ userid }, secret, {
     expiresIn: type === "access" ? "1d" : "7d",
   });
 };
@@ -26,8 +26,8 @@ export const verifyJWT = (
   }
   try {
     const decoded = jwt.verify(token, secret);
-    const { userId } = decoded as { userId: string };
-    return userId;
+    const { userid } = decoded as { userid: string };
+    return userid;
   } catch (error) {
     throw new Error("Invalid or expired token");
   }

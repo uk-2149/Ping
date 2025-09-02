@@ -5,7 +5,7 @@ export interface MessageBlockProps {
   text: string;
   username: string;
   avatar?: string;
-  time: string;
+  timeStamp: string;
   type?: "system" | "normal";
 }
 
@@ -13,7 +13,7 @@ export default function MessageBlock({
   text,
   username,
   avatar,
-  time,
+  timeStamp: time,
   type = "normal",
 }: MessageBlockProps) {
   return (

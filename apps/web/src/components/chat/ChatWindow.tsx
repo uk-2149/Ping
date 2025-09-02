@@ -16,7 +16,7 @@ export default function DmChatWindow() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Get the other user from participants
-  const otherUser = activeChat?.participants.find(p => p.id !== user?.id);
+  const otherUser = activeChat?.participants.find(p => p._id !== user?._id);
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -32,25 +32,26 @@ export default function DmChatWindow() {
     if (!activeChat?.messages || !user) return [];
 
     return activeChat.messages.map(message => {
-      const isCurrentUser = message.from === user.id;
-      const messageUser = isCurrentUser ? user : otherUser;
+  const isCurrentUser = message.from === user._id;
+  const messageUser = isCurrentUser ? user : otherUser;
+  console.log(otherUser);
 
-      return {
-        id: message.id,
-        text: message.content,
-        username: messageUser?.username || "Unknown User",
-        avatar: messageUser?.avatar || "",
-        time: message.timestamp.toLocaleString("en-GB", {
-          day: "2-digit",
-          month: "2-digit", 
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit"
-        }),
-        type: "normal" as const,
-        isCurrentUser: isCurrentUser
-      };
-    });
+  return {
+    id: message.id,
+    text: message.content,
+    username: messageUser?.username || "Unknown User",
+    avatar: messageUser?.avatar || "",
+    timeStamp: message.timeStamp.toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "2-digit", 
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    }),
+    type: "normal" as const,
+    isCurrentUser: isCurrentUser
+  };
+});
   };
 
   const messages = formatMessages();
@@ -163,7 +164,7 @@ export default function DmChatWindow() {
 
       {/* Right Sidebar - Desktop */}
       <div className="hidden lg:block w-80 border-l border-white/10 bg-[#111827]">
-        <UserInfoPanel otherUser={otherUser} />
+        <UserInfoPanel />
       </div>
 
       {/* Mobile Info Modal */}
@@ -179,7 +180,7 @@ export default function DmChatWindow() {
                 ✕
               </button>
             </div>
-            <UserInfoPanel otherUser={otherUser} />
+            <UserInfoPanel />
           </div>
         </div>
       )}

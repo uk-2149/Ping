@@ -13,22 +13,18 @@ import CreateDM from './CreateDM';
 import { useChat } from '../../context/ChatContext';
 import { useAuth } from '../../context/AuthContext';
 
-interface ChatProps {
-  // Add any props you need here
-}
-
 const Chat: React.FC<ChatProps> = () => {
   const [hoveredDM, setHoveredDM] = useState<string | null>(null);
   const [dmModal, setDMModal] = useState<boolean>(false);
 
   const {
     setShowFriends,
-    openDmWindow,
+    setActiveChat, // Changed from openDmWindow
     closeDmWindow,
     dmFriends,
     showFriends,
     activeChat,
-    chats
+    // Removed chats and loadChatHistory - no longer exist
   } = useChat();
 
   const {
@@ -38,8 +34,7 @@ const Chat: React.FC<ChatProps> = () => {
   useEffect(() => {
     console.log("activeChat changed:", activeChat);
     console.log("dmFriends:", dmFriends);
-    console.log("chats:", chats);
-  }, [activeChat, dmFriends, chats]);
+  }, [activeChat, dmFriends]); // Removed chats from dependency
 
   const getStatusColor = (status: User['status']) => {
     switch (status) {
@@ -52,44 +47,48 @@ const Chat: React.FC<ChatProps> = () => {
   };
 
   // Check if a DM friend has an active chat
-  const isActiveDM = (dmFriend: User) => {
+  const isActiveDM = (dmFriend: any) => {
     if (!activeChat) return false;
     
-    // Check if this dm friend is part of the active chat
-    return activeChat.participants.some(participant => participant.id === dmFriend.id);
+    // Check if this dm friend is the active chat (since activeChat.id = friend.id)
+    return activeChat.id === dmFriend._id;
   };
 
-  // Get unread count for a DM friend
+  // Since we removed chats array, unread count logic needs to be updated
+  // For now, we can use activeChat's unread count if it matches this friend
   const getUnreadCount = (dmFriend: User) => {
-    const chat = chats.find(chat => 
-      chat.participants.some(p => p.id === dmFriend.id)
-    );
-    return chat?.unreadCount || 0;
+    if (activeChat && activeChat.id === dmFriend._id) {
+      return activeChat.unreadCount || 0;
+    }
+    // You might want to store unread counts differently or fetch from backend
+    return 0;
   };
 
-  // Get last message preview for a DM friend
+  // Get last message preview - only available for active chat now
   const getLastMessagePreview = (dmFriend: User) => {
-    const chat = chats.find(chat => 
-      chat.participants.some(p => p.id === dmFriend.id)
-    );
-    
-    if (chat?.lastMessage) {
-      return chat.lastMessage.content.length > 30 
-        ? chat.lastMessage.content.substring(0, 30) + '...'
-        : chat.lastMessage.content;
+    if (activeChat && activeChat.id === dmFriend._id && activeChat.lastMessage) {
+      return activeChat.lastMessage.content.length > 30 
+        ? activeChat.lastMessage.content.substring(0, 30) + '...'
+        : activeChat.lastMessage.content;
     }
     
     return null;
   };
 
-  const handleDMClick = (dmFriend: User) => {
+  const handleDMClick = async (dmFriend: any) => {
     if (!user) {
       console.error("User not found");
       return;
     }
     
     console.log("Clicking DM with:", dmFriend.username);
-    openDmWindow(user, dmFriend);
+    
+    // Use setActiveChat which handles both creating chat and loading messages
+    await setActiveChat(dmFriend);
+    
+    // Show DM window
+    // You might need to add this action to your context if needed
+    // For now, assuming the chat window shows when activeChat is set
   };
 
   return (
@@ -163,13 +162,13 @@ const Chat: React.FC<ChatProps> = () => {
               
               return (
                 <div 
-                  key={dm.id}
+                  key={dm._id || dm.id} // Use _id as primary, fallback to id
                   className={`group flex items-center space-x-3 p-2 rounded-lg cursor-pointer transition-all duration-200 ${
-                    hoveredDM === dm.id ? 'bg-gray-700' : 'hover:bg-gray-700/70'
+                    hoveredDM === (dm._id || dm.id) ? 'bg-gray-700' : 'hover:bg-gray-700/70'
                   } ${
                     isActive ? 'bg-gray-700' : ''
                   }`}
-                  onMouseEnter={() => setHoveredDM(dm.id)}
+                  onMouseEnter={() => setHoveredDM(dm._id || dm.id)}
                   onMouseLeave={() => setHoveredDM(null)}
                   onClick={() => handleDMClick(dm)}
                 >
