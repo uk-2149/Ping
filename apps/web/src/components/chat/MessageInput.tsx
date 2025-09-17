@@ -128,11 +128,11 @@ export default function MessageInput() {
             </div>
 
             {/* Message Hints */}
-            <div className="mt-2 px-2">
+            {/* <div className="mt-2 px-2">
                 <p className="text-xs text-gray-600">
                     Press Enter to send, Shift+Enter for new line
                 </p>
-            </div>
+            </div> */}
         </div>
     );
 }

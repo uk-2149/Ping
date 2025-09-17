@@ -21,10 +21,21 @@ export interface AuthState {
   error: string | null;
 }
 
+export interface Server {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  ownerid: string;
+  members: string[];
+  roles: string[];
+  channels: string[];
+}
+
 export const servers = [
-    { id: 1, name: 'Gaming Hub', icon: '🎮', hasNotification: true, color: 'bg-blue-500' },
-    { id: 2, name: 'Dev Community', icon: '💻', hasNotification: false, color: 'bg-green-500' },
-    { id: 3, name: 'Art Studio', icon: '🎨', hasNotification: true, color: 'bg-purple-500' },
-    { id: 4, name: 'Music Lounge', icon: '🎵', hasNotification: false, color: 'bg-pink-500' },
-    { id: 5, name: 'Study Group', icon: '📚', hasNotification: true, color: 'bg-yellow-500' },
+    { id: "GH", name: 'Gaming Hub', icon: '🎮', hasNotification: true, color: 'bg-blue-500' },
+    { id: "DV", name: 'Dev Community', icon: '💻', hasNotification: false, color: 'bg-green-500' },
+    { id: "AS", name: 'Art Studio', icon: '🎨', hasNotification: true, color: 'bg-purple-500' },
+    { id: "ML", name: 'Music Lounge', icon: '🎵', hasNotification: false, color: 'bg-pink-500' },
+    { id: "SG", name: 'Study Group', icon: '📚', hasNotification: true, color: 'bg-yellow-500' },
 ];

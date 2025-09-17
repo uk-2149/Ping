@@ -3,8 +3,8 @@ import {
   Users, 
   Search, 
   UserPlus,
-  Bell,
-  Hash,
+  // Bell,
+  // Hash,
   UserX,
   Clock
 } from 'lucide-react';
@@ -83,8 +83,8 @@ const FriendsMainContent = () => {
         break;
       case 'Pending':
         return receivedRequests;
-      case 'Blocked':
-        return [];
+      // case 'Blocked':
+      //   return [];
       default:
         filtered = friends;
     }
@@ -116,7 +116,7 @@ const FriendsMainContent = () => {
     { name: 'Online', count: onlineFriends.length },
     { name: 'All', count: friends.length },
     { name: 'Pending', count: receivedRequests.length },
-    { name: 'Blocked', count: 0 }
+    // { name: 'Blocked', count: 0 }
   ];
 
   return (
@@ -153,30 +153,31 @@ const FriendsMainContent = () => {
             ))}
           </div>
           
-          <button 
-            onClick={() => {
-              setShowAddFriend(true);
-              setActiveTab('');
-            }}
-            className={`px-3 py-1 text-sm font-medium rounded transition-colors duration-200 flex items-center space-x-1 ${
-              showAddFriend 
-                ? 'bg-green-700 text-white'
-                : 'bg-green-600 text-white hover:bg-green-500'
-            }`}
-          >
-            <UserPlus size={14} />
-            <span>Add Friend</span>
-          </button>
+         <button
+  onClick={() => {
+    setShowAddFriend(true);
+    setActiveTab('');
+  }}
+  className={`px-3 py-1 text-sm font-medium rounded transition-colors duration-200 flex items-center space-x-1 ${
+    showAddFriend
+      ? 'bg-green-700 text-white'
+      : 'bg-green-600 text-white hover:bg-green-500'
+  }`}
+>
+  <UserPlus size={16} />
+  <span className="hidden lg:inline">Add Friend</span>
+</button>
+
         </div>
         
         <div className="flex items-center space-x-2">
-          <button className="p-1.5 hover:bg-gray-600 rounded transition-colors duration-200">
+          {/* <button className="p-1.5 hover:bg-gray-600 rounded transition-colors duration-200">
             <Bell size={16} className="text-gray-400 hover:text-white" />
-          </button>
-          <button className="p-1.5 hover:bg-gray-600 rounded transition-colors duration-200">
+          </button> */}
+          {/* <button className="p-1.5 hover:bg-gray-600 rounded transition-colors duration-200">
             <Hash size={16} className="text-gray-400 hover:text-white" />
-          </button>
-        </div>
+          </button> */}
+        </div>  
       </div>
 
       {/* Search Bar */}

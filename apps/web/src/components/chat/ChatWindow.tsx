@@ -27,6 +27,24 @@ export default function DmChatWindow() {
     scrollToBottom();
   }, [activeChat?.messages]);
 
+  function formatDateHeader(dateString: string) {
+    const date = new Date(dateString);
+    const today = new Date();
+
+    if (date.toDateString() === today.toDateString()) {
+      return "Today";
+    }
+
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    if (date.toDateString() === yesterday.toDateString()) {
+      return "Yesterday";
+    }
+
+    return date.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+  }
+
   // Convert chat messages to MessageBlock format
   const formatMessages = (): MessageBlockProps[] => {
     if (!activeChat?.messages || !user) return [];
@@ -55,6 +73,17 @@ export default function DmChatWindow() {
   };
 
   const messages = formatMessages();
+
+  const groupedMessages = messages.reduce((groups: any, msg) => {
+    const dateKey = new Date(msg.timeStamp).toDateString();
+    if (!groups[dateKey]) groups[dateKey] = [];
+    groups[dateKey].push(msg);
+    return groups;
+  }, {});
+
+  const orderedDates = Object.keys(groupedMessages).sort(
+    (a, b) => new Date(a).getTime() - new Date(b).getTime()
+  );
 
   // Don't render if no active chat or other user
   if (!activeChat || !otherUser || !user) {
@@ -127,10 +156,22 @@ export default function DmChatWindow() {
         >
           {messages.length > 0 ? (
             <>
-              {messages.map((msg) => (
-                <MessageBlock key={msg.id} {...msg} />
-              ))}
-              <div ref={messagesEndRef} />
+      {orderedDates.map((dateKey) => (
+        <div key={dateKey}>
+          {/* Date Separator */}
+          <div className="flex justify-center my-4">
+            <span className="px-3 py-1 text-xs text-gray-400 bg-gray-700/50 rounded-full">
+              {formatDateHeader(dateKey)}
+            </span>
+          </div>
+
+          {/* Messages for that date */}
+          {groupedMessages[dateKey].map((msg: any) => (
+            <MessageBlock key={msg.id} {...msg} />
+          ))}
+        </div>
+      ))}
+      <div ref={messagesEndRef} />
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center">

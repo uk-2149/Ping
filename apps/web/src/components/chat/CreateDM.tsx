@@ -20,7 +20,6 @@ export default function CreateDM({ setDMModal }: DMModalProps) {
 
   const {
     openDmWindow,
-    closeDmWindow,
     setShowFriends,
   } = useChat();
 

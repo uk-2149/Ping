@@ -8,12 +8,11 @@ import {
   MoreHorizontal
 } from 'lucide-react';
 import type { User } from '../../types';
-import api from '../../lib/api';
 import CreateDM from './CreateDM';
 import { useChat } from '../../context/ChatContext';
 import { useAuth } from '../../context/AuthContext';
 
-const Chat: React.FC<ChatProps> = () => {
+const Chat = () => {
   const [hoveredDM, setHoveredDM] = useState<string | null>(null);
   const [dmModal, setDMModal] = useState<boolean>(false);
 

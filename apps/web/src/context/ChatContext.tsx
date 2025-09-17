@@ -2,7 +2,7 @@ import React, { createContext, useContext, useReducer, useEffect, useRef, useCal
 import { io, Socket } from "socket.io-client";
 import api from "../lib/api";
 import { useAuth } from "./AuthContext";
-import type { User } from "../types";
+import { type User, type Server } from "../types";
 
 interface Message {
   id: string;
@@ -26,7 +26,8 @@ interface ChatState {
     dmFriends: any[];
     showFriends: boolean;
     showDmWindow: boolean;
-    activeServer: number | null;
+    servers: Server[];
+    activeServer: string | null;
     usernameSet: string;
 }
 
@@ -83,7 +84,8 @@ type ChatAction  =
     | { type: 'SET_FRIENDS'; payload: User[] }
     | { type: 'SET_DM_FRIENDS'; payload: User[] }
     | { type: 'SET_SHOW_FRIENDS'; payload: boolean }
-    | { type: 'SET_ACTIVE_SERVER'; payload: number | null }
+    | { type: 'SET_ACTIVE_SERVER'; payload: string | null }
+    | { type: 'CREATE_NEW_SERVER'; payload: Server }
     | { type: 'SET_SHOW_DM_WINDOW'; payload: boolean }
     | { type: 'SEND_MESSAGE'; payload: Message }
     | { type: 'RECEIVE_MESSAGE'; payload: Message }
@@ -190,6 +192,13 @@ const ChatReducer = (state: ChatState, action: ChatAction): ChatState => {
         case 'SET_ACTIVE_SERVER':
             return { ...state, activeServer: action.payload };
 
+        case 'CREATE_NEW_SERVER':
+            return {
+                ...state,
+                servers: [...state.servers, action.payload],
+                activeServer: action.payload.id
+            }
+
         case 'LOAD_CHAT_MESSAGES':
             if (!state.activeChat) return state;
             
@@ -214,6 +223,7 @@ const initialState: ChatState = {
     activeChat: null,
     friends: [],
     dmFriends: [],
+    servers: [],
     showFriends: false,
     showDmWindow: false,
     activeServer: null,
@@ -232,7 +242,7 @@ interface ChatContextType extends ChatState {
 
     // UI actions
     setShowFriends: (show: boolean) => void;
-    setActiveServer: (serverid: number | null) => void;
+    setActiveServer: (serverid: string | null) => void;
 
     loadDmFriends: () => Promise<void>; 
 }
@@ -348,7 +358,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
                 }
 
                 reconnectTimeoutRef.current = setTimeout(() => {
-                    console.log("Retrying socket connection...");
+                    console.log("Retrying socket connection...", connectionError);
                     socket.connect();
                 }, 3000);
             });
@@ -633,7 +643,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: 'SET_SHOW_FRIENDS', payload: show });
     }, []);
 
-    const setActiveServer = useCallback((serverid: number | null) => {
+    const setActiveServer = useCallback((serverid: string | null) => {
         dispatch({ type: 'SET_ACTIVE_SERVER', payload: serverid });
     }, []);
 
