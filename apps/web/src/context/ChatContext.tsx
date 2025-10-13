@@ -27,7 +27,7 @@ interface ChatState {
     showFriends: boolean;
     showDmWindow: boolean;
     servers: Server[];
-    activeServer: string | null;
+    activeServer: Server | string | null;
     usernameSet: string;
 }
 
@@ -84,7 +84,8 @@ type ChatAction  =
     | { type: 'SET_FRIENDS'; payload: User[] }
     | { type: 'SET_DM_FRIENDS'; payload: User[] }
     | { type: 'SET_SHOW_FRIENDS'; payload: boolean }
-    | { type: 'SET_ACTIVE_SERVER'; payload: string | null }
+    | { type: 'SET_SERVERS'; payload: Server[] }
+    | { type: 'SET_ACTIVE_SERVER'; payload: Server | null }
     | { type: 'CREATE_NEW_SERVER'; payload: Server }
     | { type: 'SET_SHOW_DM_WINDOW'; payload: boolean }
     | { type: 'SEND_MESSAGE'; payload: Message }
@@ -188,6 +189,9 @@ const ChatReducer = (state: ChatState, action: ChatAction): ChatState => {
                 ...state,
                 friends: [...state.friends, action.payload],
             };
+
+        case 'SET_SERVERS':
+            return { ...state, servers: action.payload };               
             
         case 'SET_ACTIVE_SERVER':
             return { ...state, activeServer: action.payload };
@@ -196,7 +200,7 @@ const ChatReducer = (state: ChatState, action: ChatAction): ChatState => {
             return {
                 ...state,
                 servers: [...state.servers, action.payload],
-                activeServer: action.payload.id
+                activeServer: action.payload
             }
 
         case 'LOAD_CHAT_MESSAGES':
@@ -242,7 +246,10 @@ interface ChatContextType extends ChatState {
 
     // UI actions
     setShowFriends: (show: boolean) => void;
-    setActiveServer: (serverid: string | null) => void;
+
+    loadServers: () => Promise<void>;
+    setActiveServer: (server: Server | null) => void;
+    createNewServer: (server: Server) => void;
 
     loadDmFriends: () => Promise<void>; 
 }
@@ -456,6 +463,18 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         }
     }, [user]);
 
+    // Load Servers
+    const loadServers = useCallback(async () => {
+        try {
+            const res = await api.get('/api/server/getServers');
+            const servers = res.data;
+            dispatch({ type: 'SET_SERVERS', payload: servers });
+            console.log("Loaded servers:", servers);
+        } catch (error) {
+            console.error('Failed to load servers:', error);
+        }
+    }, []);
+
     // Check username on render
     const checkUsername = useCallback(async () => {
         try {
@@ -479,8 +498,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         if (isAuthenticated && user) {
             checkUsername();
             loadDmFriends();
+            loadServers();
         }
-    }, [isAuthenticated, user, checkUsername, loadDmFriends]);
+    }, [isAuthenticated, user, checkUsername, loadDmFriends, loadServers]);
 
     // Updated setActiveChat - takes friend and loads their messages
     const setActiveChat = useCallback(async (friend: User) => {
@@ -643,8 +663,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: 'SET_SHOW_FRIENDS', payload: show });
     }, []);
 
-    const setActiveServer = useCallback((serverid: string | null) => {
-        dispatch({ type: 'SET_ACTIVE_SERVER', payload: serverid });
+    const createNewServer = useCallback((server: Server) => {
+        dispatch({ type: 'CREATE_NEW_SERVER', payload: server });
+    }, []);
+
+    const setActiveServer = useCallback((server: Server | null) => {
+        dispatch({ type: 'SET_ACTIVE_SERVER', payload: server });
     }, []);
 
     return (
@@ -658,7 +682,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             closeDmWindow,
             setShowFriends,
             setActiveServer,
-            loadDmFriends
+            createNewServer,
+            loadDmFriends,
+            loadServers
         }}>
             {children}
         </ChatContext.Provider>

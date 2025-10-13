@@ -8,7 +8,7 @@ export interface User {
   createdAt?: Date;
   lastSeen: Date;
   isVerified: boolean;
-  servers: string[];
+  servers: Server[];
   messages: string[];
   friends: string[];
   dmFriends: string[];
@@ -25,11 +25,13 @@ export interface Server {
   id: string;
   name: string;
   icon: string;
-  description: string;
+  description?: string;
   ownerid: string;
   members: string[];
   roles: string[];
   channels: string[];
+  createdAt: Date;
+  updatedAt: Date; 
 }
 
 export const servers = [

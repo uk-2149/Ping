@@ -4,6 +4,6 @@ import { createServer, getServers } from "../controllers/server.controller";
 const router = Router();
 
 router.post('/createServer', createServer);
-router.get('/getServer', getServers);
+router.get('/getServers', getServers);
 
 export default router;

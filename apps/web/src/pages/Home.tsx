@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { FriendsProvider } from '../context/FriendsContext';
 import CreateServerModal from '../components/server/CreateServerModal';
 import ServerSidebar from '../components/server/ServerSideBar';
+import ServerPage from '../components/server/ServerPage';
 
 function Home() {
 
@@ -38,15 +39,19 @@ function Home() {
   }, [user, showDmWindow]);
 
   return (
-    <div className="flex h-screen bg-gray-900 text-white">
-        <ProfileBar username={usernameSet} avatar={user.avatar}/>
+    <div className='h-screen'>
+    <ProfileBar username={usernameSet} avatar={user?.avatar || usernameSet[0]}/>
+    <div className="flex bg-gray-900 text-white">
         <Sidebar setShowSCmodal={setShowSCmodal} />
-        {activeServer == "DM" && <FriendsProvider><Chat /></FriendsProvider>}
-        {(activeServer == "DM") && showFriends && <FriendsProvider><Friends /></FriendsProvider>}
+        
+        {!activeServer && <FriendsProvider><Chat /></FriendsProvider>}
+        {(!activeServer) && showFriends && <FriendsProvider><Friends /></FriendsProvider>}
         {(usernameSet === "not set") && <UsernameModal />}
-        {(activeServer == "DM") && showDmWindow && <DmChatWindow />}
+        {(!activeServer) && showDmWindow && <DmChatWindow />}
         {showSCmodal && <CreateServerModal setShowSCmodal={setShowSCmodal} />}
-        {activeServer!= "DM" && <ServerSidebar />}
+
+        {activeServer && <ServerPage />}
+    </div>
     </div>
   )
 }

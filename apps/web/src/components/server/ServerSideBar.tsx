@@ -32,7 +32,7 @@ const ChannelsSidebar = () => {
     activeServer.channels.filter((c) => c.parentId === parentId);
 
   return (
-    <div className="w-full sm:w-[300px] bg-[#0b111f] flex flex-col border-r border-gray-800">
+    <div className="w-fit sm:w-[300px] h-screen bg-[#0b111f] flex flex-col border-r border-gray-800">
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-700 flex items-center justify-between">
         <h2 className="text-white font-semibold truncate">{activeServer.name}</h2>

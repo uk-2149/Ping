@@ -29,7 +29,7 @@ export default function App() {
               </PublicRoute>
             } />
           <Route 
-            path='/home' 
+            path='/' 
             element={
             <PrivateRoute>
               <ChatProvider>

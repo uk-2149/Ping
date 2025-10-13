@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema } from "mongoose";
+import { IServer } from "./Server.model";
 
 export interface IUser extends Document {
   username: string;
@@ -8,7 +9,7 @@ export interface IUser extends Document {
   avatar?: string;
   status: "ONLINE" | "OFFLINE" | "AWAY" | "DO_NOT_DISTURB";
   lastSeen: Date;
-  servers: mongoose.Types.ObjectId[];   // refs to ServerMember
+  servers: (mongoose.Types.ObjectId | IServer)[];   // refs to ServerMember
   messages: mongoose.Types.ObjectId[];  // refs to Message
   friends: mongoose.Types.ObjectId[];   // refs to other User
   dmFriends: mongoose.Types.ObjectId[];  // refs to User

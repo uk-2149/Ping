@@ -26,7 +26,7 @@ export const PublicRoute: React.FC<PublicRouteProps> = ({
   // If route is restricted (like login/signup) and user is authenticated
   if (restricted && isAuthenticated) {
     // Redirect to the intended page or dashboard
-    const from = location.state?.from?.pathname || "/chat";
+    const from = location.state?.from?.pathname || "/";
     return <Navigate to={from} replace />;
   }
 
