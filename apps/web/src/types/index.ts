@@ -22,7 +22,7 @@ export interface AuthState {
 }
 
 export interface Server {
-  id: string;
+  _id: string;
   name: string;
   icon: string;
   description?: string;
@@ -34,10 +34,17 @@ export interface Server {
   updatedAt: Date; 
 }
 
-export const servers = [
-    { id: "GH", name: 'Gaming Hub', icon: '🎮', hasNotification: true, color: 'bg-blue-500' },
-    { id: "DV", name: 'Dev Community', icon: '💻', hasNotification: false, color: 'bg-green-500' },
-    { id: "AS", name: 'Art Studio', icon: '🎨', hasNotification: true, color: 'bg-purple-500' },
-    { id: "ML", name: 'Music Lounge', icon: '🎵', hasNotification: false, color: 'bg-pink-500' },
-    { id: "SG", name: 'Study Group', icon: '📚', hasNotification: true, color: 'bg-yellow-500' },
-];
+interface Member {
+  _id: string;
+  name: string;
+  username: string;
+  avatar?: string;
+}
+
+export interface Roles {
+  _id: string;
+  name: string;
+  permissions: Record<string, any>;
+  serverid: string;
+  members: Member[];
+} 

@@ -11,12 +11,13 @@ const ProfileBar: React.FC<ProfileBarProps> = ({ username, avatar }) => {
       <div
         className="
           p-3 bg-gray-900 border-t border-gray-700 
-          fixed bottom-3 left-1/2 md:left-3 transform -translate-x-1/2 md:translate-x-0
+         bottom-3 left-1/2 md:left-3 transform -translate-x-1/2 md:translate-x-0
           rounded-lg 
           w-[55%] sm:w-[60%] md:w-[33%] lg:w-[30%] 
           max-w-[330px] 
           flex justify-center md:justify-start 
           transition-all duration-300
+          absolute
         "
       >
         <div className="flex justify-between items-center w-full flex-wrap gap-2">

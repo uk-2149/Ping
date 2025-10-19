@@ -1,9 +1,12 @@
-import React from 'react'
+import ServerMembersSidebar from './ServerMemberBar'
 
 function ServerMainWindow() {
   return (
-    <div className='w-full'>
-        <h1>Main Window</h1>
+    <div className='flex items-center justify-between w-full'>
+        <div className=''>
+            Main Content
+        </div>
+        <ServerMembersSidebar />
     </div>
   )
 }

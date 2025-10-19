@@ -4,6 +4,7 @@ export interface IRole extends Document {
   name: string;
   permissions: Record<string, any>;
   serverid: mongoose.Types.ObjectId;
+  members: mongoose.Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -14,7 +15,7 @@ const roleSchema = new Schema<IRole>(
     name: { type: String, required: true },
     permissions: { type: Schema.Types.Mixed }, // can refine to enum/bitfield later
     serverid: { type: Schema.Types.ObjectId, ref: "Server", required: true },
-    // members: [{ type: Schema.Types.Objectid, ref: "ServerMember" }],
+    members: [{ type: Schema.Types.ObjectId, ref: "ServerMember" }],
   },
   { timestamps: true }
 );

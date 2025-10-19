@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Hash, Mic, MoreHorizontal } from "lucide-react";
+import { ChevronDown, ChevronRight, Hash, Mic } from "lucide-react";
 
 const mockServer = {
   id: "server1",
@@ -34,9 +34,9 @@ const ChannelsSidebar = () => {
   return (
     <div className="w-fit sm:w-[300px] h-screen bg-[#0b111f] flex flex-col border-r border-gray-800">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-gray-700 flex items-center justify-between">
+      <div className="px-4 py-3 border-b border-gray-700 flex items-center justify-between hover:bg-gray-700/50 cursor-pointer">
         <h2 className="text-white font-semibold truncate">{activeServer.name}</h2>
-        <MoreHorizontal className="text-gray-400 hover:text-white cursor-pointer" size={18} />
+        <ChevronDown className="text-gray-400 hover:text-white cursor-pointer" size={18} />
       </div>
 
       {/* Channels */}

@@ -1,12 +1,11 @@
+// Channel.model.ts
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface IChannel extends Document {
   name: string;
-  type: "TEXT" | "VOICE" | "VidEO";
+  description?: string;
   serverid: mongoose.Types.ObjectId;
-  parentid?: mongoose.Types.ObjectId;
-  messages: mongoose.Types.ObjectId[];
-  permissions: mongoose.Types.ObjectId[];
+  subChannels: mongoose.Types.ObjectId[]; // references SubChannel documents
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -14,15 +13,9 @@ export interface IChannel extends Document {
 const channelSchema = new Schema<IChannel>(
   {
     name: { type: String, required: true },
-    type: {
-      type: String,
-      enum: ["TEXT", "VOICE", "VidEO"],
-      default: "TEXT",
-    },
+    description: { type: String },
     serverid: { type: Schema.Types.ObjectId, ref: "Server", required: true },
-    parentid: { type: Schema.Types.ObjectId, ref: "Channel" },
-    messages: [{ type: Schema.Types.ObjectId, ref: "Message" }],
-    permissions: [{ type: Schema.Types.ObjectId, ref: "ChannelPermission" }],
+    subChannels: [{ type: Schema.Types.ObjectId, ref: "SubChannel" }],
   },
   { timestamps: true }
 );

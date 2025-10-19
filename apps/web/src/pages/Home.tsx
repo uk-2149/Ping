@@ -39,9 +39,9 @@ function Home() {
   }, [user, showDmWindow]);
 
   return (
-    <div className='h-screen'>
-    <ProfileBar username={usernameSet} avatar={user?.avatar || usernameSet[0]}/>
-    <div className="flex bg-gray-900 text-white">
+    
+    <div className="flex h-screen w-screen bg-gray-900 text-white">
+      <ProfileBar username={usernameSet} avatar={user?.avatar || usernameSet[0]}/>
         <Sidebar setShowSCmodal={setShowSCmodal} />
         
         {!activeServer && <FriendsProvider><Chat /></FriendsProvider>}
@@ -52,7 +52,7 @@ function Home() {
 
         {activeServer && <ServerPage />}
     </div>
-    </div>
+    
   )
 }
 

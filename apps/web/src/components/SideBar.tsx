@@ -3,6 +3,7 @@ import {
   Plus
 } from 'lucide-react';
 import { useChat } from '../context/ChatContext';
+import { useServer } from '../context/ServerContext';
 
 interface SideBarProps {
   setShowSCmodal: React.Dispatch<React.SetStateAction<boolean>>
@@ -20,11 +21,15 @@ const Sidebar = ({ setShowSCmodal }: SideBarProps) => {
     servers
   } = useChat();
 
+  const {
+    fetchRoles,
+  } = useServer();
+
   return (
     <>
     
       {/* Server List */}
-      <div className="w-16 bg-gray-950 flex flex-col items-center py-3 space-y-2 border-r border-gray-800">
+      <div className="w-[65px] bg-gray-950 flex flex-col items-center py-3 space-y-2 border-r border-gray-800">
         {/* Home/DM Button */}
         <div 
           className="group relative flex items-center justify-center w-12 h-12 rounded-2xl bg-indigo-600 hover:bg-indigo-500 hover:rounded-xl transition-all duration-200 cursor-pointer"
@@ -43,9 +48,9 @@ const Sidebar = ({ setShowSCmodal }: SideBarProps) => {
         {/* Server Icons */}
         {servers.map((server) => (
           <div 
-            key={server.id}
+            key={server._id}
             className="group relative z-35"
-            onClick={() => setActiveServer(server)}
+            onClick={() => {setActiveServer(server); fetchRoles(server._id);}}
             // onMouseEnter={() => setHoveredServer(server.id)}
             // onMouseLeave={() => setHoveredServer(null)}
           >

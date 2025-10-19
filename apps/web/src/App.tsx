@@ -6,6 +6,7 @@ import { PrivateRoute } from './auth/Private';
 import { PublicRoute } from './auth/Public';
 import Home from './pages/Home';
 import { ChatProvider } from './context/ChatContext';
+import { ServerProvider } from './context/ServerContext';
 
 export default function App() {
   return (
@@ -33,7 +34,9 @@ export default function App() {
             element={
             <PrivateRoute>
               <ChatProvider>
-              <Home />
+                <ServerProvider>
+                  <Home />
+                </ServerProvider>
               </ChatProvider>
             </PrivateRoute>
           } /> 

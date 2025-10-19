@@ -241,7 +241,7 @@ interface ChatContextType extends ChatState {
     // Chat actions
     openDmWindow: (currentUser: User, friend: User) => void;
     closeDmWindow: () => void;
-    setActiveChat: (friend: User) => Promise<void>; // Changed: now takes friend and loads messages
+    setActiveChat: (friend: User) => Promise<void>; 
     sendMessage: (content: string) => void;
 
     // UI actions
