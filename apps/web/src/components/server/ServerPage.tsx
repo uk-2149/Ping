@@ -1,8 +1,35 @@
-import ServerMainWindow from './ServerMainWindow';
+import { useEffect } from 'react';
+import ServerMainWindow from './components/ServerMainWindow';
 // import ServerMembersSidebar from './ServerMemberBar';
-import ChannelsSidebar from './ServerSideBar';
+import ChannelsSidebar from './components/ServerSideBar';
+import { useChat } from '../../context/ChatContext';
+import { useAuth } from '../../context/AuthContext';
+import { useServer } from '../../context/ServerContext';
+import ServerInvite from './components/ServerInvite';
 
 function ServerPage() {
+
+  const {
+    activeServer,
+  } = useChat();
+
+  const {
+    user
+  } = useAuth();
+
+  const {
+    getUserPermissions,
+  } = useServer();
+
+  useEffect(() => {
+      if (!activeServer || !user) return;
+      getUserPermissions(activeServer._id, user._id);
+    }, [getUserPermissions, activeServer, user]);
+
+  const handleInvite = (input: string) => {
+    console.log("Invite sent to:", input);
+    // Here call your backend: e.g. sendInviteToUser(serverId, input)
+  };
 
   return (
     <div>
@@ -11,6 +38,9 @@ function ServerPage() {
                   <ChannelsSidebar />
                 </div>
                 <ServerMainWindow />
+                <ServerInvite
+                  onInvite={handleInvite}
+                />
         </div>
     </div>
   )

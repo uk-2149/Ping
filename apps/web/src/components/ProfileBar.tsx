@@ -17,7 +17,7 @@ const ProfileBar: React.FC<ProfileBarProps> = ({ username, avatar }) => {
           max-w-[330px] 
           flex justify-center md:justify-start 
           transition-all duration-300
-          absolute
+          absolute z-80
         "
       >
         <div className="flex justify-between items-center w-full flex-wrap gap-2">

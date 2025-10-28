@@ -6,7 +6,6 @@ export interface ISubChannel extends Document {
   serverid: mongoose.Types.ObjectId;
   parentid?: mongoose.Types.ObjectId;
   messages: mongoose.Types.ObjectId[];
-  permissions: mongoose.Types.ObjectId[];
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -22,7 +21,6 @@ const channelSchema = new Schema<ISubChannel>(
     serverid: { type: Schema.Types.ObjectId, ref: "Server", required: true },
     parentid: { type: Schema.Types.ObjectId, ref: "Channel" },
     messages: [{ type: Schema.Types.ObjectId, ref: "Message" }],
-    permissions: [{ type: Schema.Types.ObjectId, ref: "ChannelPermission" }],
   },
   { timestamps: true }
 );

@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useServer } from "../../context/ServerContext";
+import { useServer } from "../../../context/ServerContext";
 
 const getInitial = (name: string) => name.charAt(0).toUpperCase();
 
@@ -31,7 +31,7 @@ const ServerMembersSidebar: React.FC = () => {
                   <img
                     src={member.avatar}
                     alt={member.name}
-                    className="w-8 h-8 rounded-full object-cover"
+                    className="w-8 h-8 rounded-full object-cover bg-[#111a30]"
                   />
                 ) : (
                   <div className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-600 text-white font-medium">

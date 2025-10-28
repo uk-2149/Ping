@@ -9,8 +9,8 @@ import DmChatWindow from '../components/chat/ChatWindow';
 import { useChat } from '../context/ChatContext';
 import { useAuth } from '../context/AuthContext';
 import { FriendsProvider } from '../context/FriendsContext';
-import CreateServerModal from '../components/server/CreateServerModal';
-import ServerSidebar from '../components/server/ServerSideBar';
+import CreateServerModal from '../components/server/components/CreateServerModal';
+import ServerSidebar from '../components/server/components/ServerSideBar';
 import ServerPage from '../components/server/ServerPage';
 
 function Home() {

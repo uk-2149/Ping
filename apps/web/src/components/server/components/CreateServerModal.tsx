@@ -1,8 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { useState } from "react";
-import api from "../../lib/api";
-import { useChat } from "../../context/ChatContext";
+import api from "../../../lib/api";
+import { useChat } from "../../../context/ChatContext";
 
 interface CreateServerModalProps {
   setShowSCmodal: (show: boolean) => void;

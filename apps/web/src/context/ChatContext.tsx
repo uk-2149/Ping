@@ -27,7 +27,7 @@ interface ChatState {
     showFriends: boolean;
     showDmWindow: boolean;
     servers: Server[];
-    activeServer: Server | string | null;
+    activeServer: Server | null;
     usernameSet: string;
 }
 
