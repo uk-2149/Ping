@@ -15,6 +15,7 @@ import { useServer } from "../../../context/ServerContext";
 
 interface ServerMenuProps {
   isOpen: boolean;
+  setShowCCmodal: (show: boolean) => void;
 }
 
 interface MenuItem {
@@ -26,6 +27,7 @@ interface MenuItem {
 
 const ServerMenu: React.FC<ServerMenuProps> = ({
   isOpen,
+  setShowCCmodal,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const { userPermissions, openInviteBox } = useServer();
@@ -47,7 +49,7 @@ const ServerMenu: React.FC<ServerMenuProps> = ({
 
   const handleInvite = () => openInviteBox(true);
   const handleServerSettings = () => console.log("Open Server Settings");
-  const handleCreateChannel = () => console.log("Create Channel clicked");
+  const handleCreateChannel = () => setShowCCmodal(true);
   const handleCreateCategory = () => console.log("Create Category clicked");
   const handleCreateEvent = () => console.log("Create Event clicked");
   const handleNotifications = () => console.log("Open Notifications");

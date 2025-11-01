@@ -47,4 +47,25 @@ export interface Roles {
   permissions: Record<string, any>;
   serverid: string;
   members: Member[];
-} 
+}
+
+export interface Channel {
+  _id: string;
+  name: string;
+  description?: string;
+  serverid: string;
+  subChannels: string[];
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface SubChannel {
+  _id: string;
+  name: string;
+  type: "TEXT" | "VOICE" | "VIDEO";
+  serverid: string;
+  parentid?: string;
+  messages: string[];
+  createdAt?: Date;
+  updatedAt?: Date;
+}

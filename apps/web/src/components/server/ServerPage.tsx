@@ -1,13 +1,15 @@
-import { useEffect } from 'react';
-import ServerMainWindow from './components/ServerMainWindow';
+import { useEffect, useState } from 'react';
+import ServerMainWindow from './ServerMainWindow';
 // import ServerMembersSidebar from './ServerMemberBar';
 import ChannelsSidebar from './components/ServerSideBar';
 import { useChat } from '../../context/ChatContext';
 import { useAuth } from '../../context/AuthContext';
 import { useServer } from '../../context/ServerContext';
 import ServerInvite from './components/ServerInvite';
+import CreateChannelModal from './components/CreateChannelModal';
 
 function ServerPage() {
+  const [showCCmodal, setShowCCmodal] = useState<boolean>(false);
 
   const {
     activeServer,
@@ -35,13 +37,14 @@ function ServerPage() {
     <div>
         <div className="flex w-[calc(100vw-65px)] h-screen bg-[#313338] text-gray-100">
                 <div className='w-fit sm:w-[300px]'>
-                  <ChannelsSidebar />
+                  <ChannelsSidebar setShowCCmodal={setShowCCmodal}/>
                 </div>
                 <ServerMainWindow />
                 <ServerInvite
                   onInvite={handleInvite}
                 />
         </div>
+        {showCCmodal && <CreateChannelModal setShowCCmodal={setShowCCmodal} />}
     </div>
   )
 }

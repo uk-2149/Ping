@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useCallback } from "react";
 import api from "../lib/api";
-import { type Roles } from "../types";
+import { type Channel, type Roles, type SubChannel } from "../types";
 
 type Permission =
   | "ADMIN"
@@ -10,10 +10,22 @@ type Permission =
   | "SEND_MESSAGES"
   | "CONNECT_VOICE";
 
+interface chan {
+  _id: string;
+  name: string;
+}
+
+interface ActiveServerChat {
+    channel: chan;
+    subchannel: chan;
+}
+
 interface ServerState {
   roles: Roles[];
   userPermissions: Permission[];
   isOpenInvite: boolean;
+  channels: any[];
+  ActiveServerChat: ActiveServerChat;
 }
 
 type ServerAction =
@@ -22,12 +34,18 @@ type ServerAction =
   | { type: "UPDATE_ROLE"; payload: Roles }
   | { type: "DELETE_ROLE"; payload: string }
   | { type: "GET_USER_PERMISSIONS"; payload: Permission[] }
-  | { type: "OPEN_INVITE"; payload: boolean };
+  | { type: "OPEN_INVITE"; payload: boolean }
+  | { type: "SET_CHANNELS"; payload: chan[] }
+  | { type: "ADD_CHANNEL"; payload: chan }
+  | { type: "SET_ACTIVE_SERVER_CHAT"; payload: ActiveServerChat };
 
 interface ServerContextType extends ServerState {
   fetchRoles: (serverid: string) => Promise<void>;
   getUserPermissions: (serverid: string, userid: string) => Promise<void>;
   openInviteBox: (param: boolean) => void;
+  setChannels: (channels: any[]) => void;
+  addChannel: (channel: any) => void;
+  setActiveServerChat: (channel: chan, subchannel: chan) => void;
 }
 
 const ServerContext = createContext<ServerContextType | undefined>(undefined);
@@ -57,6 +75,15 @@ const ServerReducer = (state: ServerState, action: ServerAction): ServerState =>
     case "OPEN_INVITE":
       return { ...state, isOpenInvite: action.payload };
 
+    case "SET_CHANNELS":
+      return { ...state, channels: [...action.payload] };
+
+    case "ADD_CHANNEL":
+      return { ...state, channels: [...state.channels, action.payload] };
+
+    case "SET_ACTIVE_SERVER_CHAT":
+      return { ...state, ActiveServerChat: action.payload };
+
     default:
       return state;
   }
@@ -66,6 +93,8 @@ const initialState: ServerState = {
   roles: [],
   userPermissions: [],
   isOpenInvite: false,
+  channels: [],
+  ActiveServerChat: { channel: { _id: "", name: "" }, subchannel: { _id: "", name: "" } },
 };
 
 export function ServerProvider({ children }: { children: React.ReactNode }) {
@@ -106,10 +135,34 @@ export function ServerProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error("Error fetching user permissions:", error);
     }
-  }, [])
+  }, []);
+
+  const setActiveServerChat = useCallback((channel: chan, subchannel: chan) => {
+    try {
+      dispatch({ type: "SET_ACTIVE_SERVER_CHAT", payload: { channel, subchannel } });
+    } catch (error) {
+      console.error("Error fetching user permissions:", error);
+    }
+  }, []);
+
+  const setChannels = useCallback((channels: any[]) => {
+    try {
+      dispatch({ type: "SET_CHANNELS", payload: channels });
+    } catch (error) {
+      console.error("Error fetching user permissions:", error);
+    }
+  }, []);
+
+  const addChannel = useCallback(async (channel: any) => {
+    try {
+      dispatch({ type: "ADD_CHANNEL", payload: channel });
+    } catch (error) {
+      console.error("Error fetching user permissions:", error);
+    }
+  }, []);
 
   return (
-    <ServerContext.Provider value={{ ...state, fetchRoles, getUserPermissions, openInviteBox }}>
+    <ServerContext.Provider value={{ ...state, fetchRoles, getUserPermissions, openInviteBox, setActiveServerChat, setChannels, addChannel }}>
       {children}
     </ServerContext.Provider>
   );

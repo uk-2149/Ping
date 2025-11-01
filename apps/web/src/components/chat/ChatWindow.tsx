@@ -88,7 +88,7 @@ export default function DmChatWindow() {
   // Don't render if no active chat or other user
   if (!activeChat || !otherUser || !user) {
     return (
-      <div className="flex h-screen w-full sm:w-4/5 bg-[#0b111f] text-white items-center justify-center">
+      <div className="flex h-screen w-full sm:w-4/5 bg-[#121929] text-white items-center justify-center">
         <div className="text-center">
           <p className="text-gray-400 text-lg mb-2">No active chat</p>
           <p className="text-gray-500 text-sm">Select a conversation to start chatting</p>
@@ -98,7 +98,7 @@ export default function DmChatWindow() {
   }
 
   return (
-    <div className="flex h-screen w-full sm:w-4/5 bg-[#0b111f] text-white">
+    <div className="flex h-screen w-full sm:w-4/5 bg-[#121929] text-white">
       {/* Chat Section */}
       <div className="flex flex-col flex-1">
         {/* Top Header */}

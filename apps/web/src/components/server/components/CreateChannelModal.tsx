@@ -2,38 +2,41 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { useState } from "react";
 import api from "../../../lib/api";
+import { useServer } from "../../../context/ServerContext";
 import { useChat } from "../../../context/ChatContext";
 
-interface CreateServerModalProps {
-  setShowSCmodal: (show: boolean) => void;
+interface CreateChannelModalProps {
+  setShowCCmodal: (show: boolean) => void;
 }
 
-export default function CreateServerModal({
-  setShowSCmodal,
-}: CreateServerModalProps) {
+export default function CreateChannelModal({
+  setShowCCmodal,
+}: CreateChannelModalProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const { setActiveServer, createNewServer } = useChat();
+  const {
+    activeServer
+  } = useChat();
+
+  const {
+    addChannel
+  } = useServer();
 
   const handleCreate = async () => {
     setLoading(true);
     try {
       if (!name.trim()) return;
-      const seed = name + Math.floor(Math.random() * 10000);
-      const icon = `https://api.dicebear.com/9.x/shapes/svg?seed=${seed}`;
-      const res = await api.post("/api/server/createServer", {
+      const res = await api.post(`/api/server/${activeServer?._id}/createChannel`, {
         name,
         description,
-        icon,
       });
       console.log(res.data);
-      createNewServer(res.data.server);
-      setActiveServer(res.data.server.id);
+      addChannel(res.data.channel);
       setName("");
       setDescription("");
-      setShowSCmodal(false);
+      setShowCCmodal(false);
     } catch (error: any) {
       console.log(error);
     } finally {
@@ -50,7 +53,7 @@ export default function CreateServerModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={() => setShowSCmodal(false)}
+          onClick={() => setShowCCmodal(false)}
         />
 
         {/* Modal */}
@@ -64,7 +67,7 @@ export default function CreateServerModal({
           <div className="bg-[#1a2234] w-[90%] max-w-md rounded-2xl shadow-xl border border-white/10 p-6 relative">
             {/* Close button */}
             <button
-              onClick={() => setShowSCmodal(false)}
+              onClick={() => setShowCCmodal(false)}
               className="absolute top-3 right-3 text-gray-400 hover:text-white transition-colors"
             >
               <X size={20} />
@@ -72,23 +75,23 @@ export default function CreateServerModal({
 
             {/* Header */}
             <h2 className="text-xl font-bold text-white mb-1">
-              Create a Server
+              Create a Channel
             </h2>
             <p className="text-sm text-gray-400 mb-5">
-              Give your server a name and description to get started.
+              Give your Channel a name and description.
             </p>
 
             {/* Form */}
             <div className="space-y-4">
               <div>
                 <label className="block text-sm text-gray-300 mb-1">
-                  Server Name
+                  Channel Name
                 </label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Enter server name"
+                  placeholder="Enter channel name"
                   className="w-full px-3 py-2 rounded-lg bg-[#111827] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-600"
                 />
               </div>
@@ -100,7 +103,7 @@ export default function CreateServerModal({
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Enter server description"
+                  placeholder="Enter channel description"
                   rows={3}
                   className="w-full px-3 py-2 rounded-lg bg-[#111827] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-600 resize-none"
                 />
@@ -143,7 +146,7 @@ export default function CreateServerModal({
                     <span>Creating...</span>
                   </>
                 ) : (
-                  "Create Server"
+                  "Create Channel"
                 )}
               </button>
             </div>

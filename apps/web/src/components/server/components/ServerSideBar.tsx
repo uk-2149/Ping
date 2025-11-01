@@ -3,14 +3,24 @@ import { ChevronDown, ChevronRight, Hash, Mic } from "lucide-react";
 import ServerMenu from "./ServerMenu";
 import { useChat } from "../../../context/ChatContext";
 import api from "../../../lib/api";
+import { useServer } from "../../../context/ServerContext";
 
-const ChannelsSidebar = () => {
+interface ChannelsSidebarProps {
+  setShowCCmodal: (show: boolean) => void;
+}
+
+const ChannelsSidebar = ({ setShowCCmodal }: ChannelsSidebarProps) => {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const [activeChannel, setActiveChannel] = useState<any>(null);
+  const [activeSubChannel, setActiveSubChannel] = useState<any>(null);
   const [open, setOpen] = useState(false);
-  const [channels, setChannels] = useState<any[]>([]); // store categories with subchannels
+  // const [channels, setChannelss] = useState<any[]>([]); // store categories with subchannels
 
   const { activeServer } = useChat();
+  const {
+    setActiveServerChat,
+    setChannels,
+    channels
+  } = useServer();
 
   useEffect(() => {
     if (activeServer?._id) fetchChannels();
@@ -23,10 +33,17 @@ const ChannelsSidebar = () => {
       const res = await api.get(`/api/server/getChannels/${activeServer._id}`);
       setChannels(res.data);
       console.log("Fetched channels:", res.data);
+      setActiveSubChannel(res.data[0].subChannels[0]);
+      setActiveServerChat({ _id: res.data[0]._id, name: res.data[0].name }, { _id: res.data[0].subChannels[0]._id, name: res.data[0].subChannels[0].name })
     } catch (error) {
       console.error("Error fetching channels:", error);
       setChannels([]);
     }
+  };
+
+  const handleChannelClick = (channel: any, subchannel: any) => {
+    setActiveSubChannel(subchannel);
+    setActiveServerChat({ _id: channel._id, name: channel.name }, { _id: subchannel._id, name: subchannel.name })
   };
 
   if (!activeServer) return null;
@@ -50,7 +67,7 @@ const ChannelsSidebar = () => {
       <div className="relative flex-1 overflow-y-auto">
         <ServerMenu
           isOpen={open}
-          onClose={() => setOpen(false)}
+          setShowCCmodal={setShowCCmodal}
         />
 
         {channels.map((cat) => {
@@ -76,10 +93,10 @@ const ChannelsSidebar = () => {
                   {cat.subChannels?.map((ch: any) => (
                     <button
                       key={ch._id}
-                      onClick={() => setActiveChannel(ch)}
+                      onClick={() => handleChannelClick(cat, ch)}
                       className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm truncate transition-all duration-200
                         ${
-                          activeChannel?._id === ch._id
+                          activeSubChannel?._id === ch._id
                             ? "bg-gray-700 text-white"
                             : "text-gray-400 hover:text-white hover:bg-gray-700/50"
                         }`}

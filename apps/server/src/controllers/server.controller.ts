@@ -7,6 +7,7 @@ import ChannelModel from "../models/Channel.model";
 import SubChannelModel from "../models/SubChannel.model";
 import mongoose from "mongoose";
 import redisClient from "../utils/redisClient";
+import { sub } from "framer-motion/client";
 
 // Create a new Server
 export const createServer = async (req: Request, res: Response) => {
@@ -211,7 +212,7 @@ export const CreateChannel = async (req: Request, res: Response) => {
     server.channels.push(channel._id as mongoose.Types.ObjectId);
     await server.save();
 
-    return res.status(200).json({ message: "Channel created successfully" });
+    return res.status(200).json({ message: "Channel created successfully", channel: { _id: channel._id, name: channel.name, subChannels: [], description: channel.description } });
   } catch (error) {
     console.error("Error creating channel:", error);
     return res.status(500).json({ message: "Internal server error" });
